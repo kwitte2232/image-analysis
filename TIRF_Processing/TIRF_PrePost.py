@@ -206,6 +206,49 @@ def compile_data(all_data):
 
     return total_cells, compiled_data
 
+def get_averages(compiled_data, total_cells):
+
+    pre = numpy.array(total_cells)
+    post = []
+    dual = []
+
+    ave_data = {}
+
+    for cell in compiled_data:
+        curr_cell_data = compiled_data[cell] #dictionary of pre, post, dual
+        for data_type in curr_cell_data:
+            if data_type == "pre":
+                pre_data = curr_cell_data[data_type]
+                pre.append(pre_data[0])
+
+            elif data_type == "post":
+                post_data = curr_cell_data[data_type]
+                post.append(post_data)
+
+            elif data_type == "dual":
+                dual_data = curr_cell_data[data_type]
+                dual.append(dual_data)
+
+    pre_mean = numpy.mean(pre)
+    pre_stdev = numpy.std(pre)
+    final_pre_data = [pre_mean, pre_stdev]
+    ave_data["pre"] = final_pre_data
+
+    post_tuple = tuple(post)
+    all_post = numpy.vstack(post_tuple)
+    post_mean = numpy.mean(all_post, axis = 0) #finds the mean of each column
+    post_stdev = numpy.std(all_post, axis = 0) #finds the stdev of each column
+    final_post_data = [post_mean, post_stdev]
+
+    dual_tuple = tuple(dual)
+    all_dual = numpy.vstack(dual_tuple)
+    dual_mean = numpy.mean(all_dual, axis = 0) #finds the mean of each column
+    dual_stdev = numpy.std(all_dual, axis = 0) #finds the stdev of each column
+    final_dual_data = [dual_mean, dual_stdev]
+
+
+
+
 def plot_post_ints(compiled_data, total_cells):
 
     all_cells = []
@@ -240,3 +283,6 @@ def plot_post_ints(compiled_data, total_cells):
         line = plt.plot(time, curr_cell, label = curr_cell_name)
 
     plt.show()
+
+
+#def plot_averages(compiled_data, total_cells):
