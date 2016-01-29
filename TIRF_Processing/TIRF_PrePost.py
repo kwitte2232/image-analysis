@@ -130,9 +130,9 @@ def build_data(expt_dir, row_names):
     for dir_name, field_dir, dir_files in os.walk(expt_dir):
         if re.search('(.)*Trans', dir_name):
             split_dir_name = dir_name.split('/')
-            #print(split_dir)
-            field_name = split_dir_name[1]
-            cell = split_dir_name[3]
+            print(split_dir_name)
+            field_name = split_dir_name[5]
+            cell = split_dir_name[7]
             if field_name not in all_data:
                 all_data[field_name] = {}
             field_dict = all_data[field_name]
@@ -206,7 +206,22 @@ def compile_data(all_data):
 
     return total_cells, compiled_data
 
-def get_averages(compiled_data, total_cells):
+def subtract_bkgrnd(compiled_data):
+
+    for cell in compiled_data:
+        cell_data = compiled_data[cell]
+        for data_type in cell_data:
+            if data_type == "post":
+                post_data = cell_data[data_type] #list of numpy arrays
+                raw_intensities = post_data[0] # numpy array
+                bkgrnd = post_data[1][0] # only the background value
+                bk_sub_intensities = raw_intensities - bkgrnd
+                all_cells.append(bk_sub_intensities)
+                total_time = len(raw_intensities)
+
+
+
+def get_averages(total_cells, compiled_data):
 
     pre = numpy.array(total_cells)
     post = []
@@ -219,7 +234,7 @@ def get_averages(compiled_data, total_cells):
         for data_type in curr_cell_data:
             if data_type == "pre":
                 pre_data = curr_cell_data[data_type]
-                pre.append(pre_data[0])
+                numpy.append(pre, pre_data[0])
 
             elif data_type == "post":
                 post_data = curr_cell_data[data_type]
@@ -235,9 +250,11 @@ def get_averages(compiled_data, total_cells):
     ave_data["pre"] = final_pre_data
 
     post_tuple = tuple(post)
+    print("post_tuple ", post_tuple)
     all_post = numpy.vstack(post_tuple)
+    print("all_post: ", all_post)
     post_mean = numpy.mean(all_post, axis = 0) #finds the mean of each column
-    post_stdev = numpy.std(all_post, axis = 0) #finds the stdev of each column
+    post_stdev = numpy.std(all_post, axis = 0, dtype = None) #finds the stdev of each column
     final_post_data = [post_mean, post_stdev]
     ave_data["post"] = final_post_data
 
@@ -287,4 +304,24 @@ def plot_post_ints(compiled_data, total_cells):
     plt.show()
 
 
-#def plot_averages(compiled_data, total_cells):
+def plot_averages(ave_data, total_cells):
+
+    post_data = ave_data["post"] #list of 2 numpy arrays, one for aves other std
+    dual_aves = ave_data["dual"] #list of 2 numpy arrays, one for aves other std
+    pre_data = ave_data["pre"] #list of 2 elements, 0th = ave, 1st = std
+
+    fig = plt.figure()
+
+    #post data
+    post_aves = post_data[0]
+    post_stdev = post_data[1]
+
+    total_time = len(post_aves)
+    time = []
+    for i in range(total_time):
+        time_pt = i + 1
+        time.append(time_pt)
+
+    plt.errorbar(plot_aves, time, xerr = post_stdev, yerr = post_stdev)
+
+    plt.show()
