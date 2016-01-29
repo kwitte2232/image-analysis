@@ -239,14 +239,16 @@ def get_averages(compiled_data, total_cells):
     post_mean = numpy.mean(all_post, axis = 0) #finds the mean of each column
     post_stdev = numpy.std(all_post, axis = 0) #finds the stdev of each column
     final_post_data = [post_mean, post_stdev]
+    ave_data["post"] = final_post_data
 
     dual_tuple = tuple(dual)
     all_dual = numpy.vstack(dual_tuple)
     dual_mean = numpy.mean(all_dual, axis = 0) #finds the mean of each column
     dual_stdev = numpy.std(all_dual, axis = 0) #finds the stdev of each column
     final_dual_data = [dual_mean, dual_stdev]
+    ave_dat["dual"] = final_dual_data
 
-
+    return ave_data
 
 
 def plot_post_ints(compiled_data, total_cells):
