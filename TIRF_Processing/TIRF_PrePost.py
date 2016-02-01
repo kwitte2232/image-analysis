@@ -208,17 +208,27 @@ def compile_data(all_data):
 
 def subtract_bkgrnd(compiled_data):
 
+    all_cells = {}
     for cell in compiled_data:
         cell_data = compiled_data[cell]
+        if cell not in all_cells:
+            all_cells[cell] = {}
+        cell_ID = all_cells[cell] # empty dict
         for data_type in cell_data:
-            if data_type == "post":
-                post_data = cell_data[data_type] #list of numpy arrays
-                raw_intensities = post_data[0] # numpy array
-                bkgrnd = post_data[1][0] # only the background value
+            if data_type == "post" or data_type == "dual":
+                data = cell_data[data_type] #list of numpy arrays
+                raw_intensities = data[0] # numpy array
+                bkgrnd = data[1][0] # only the background value
                 bk_sub_intensities = raw_intensities - bkgrnd
-                all_cells.append(bk_sub_intensities)
-                total_time = len(raw_intensities)
+                cell_ID[data_type] = bk_sub_intensities
+            elif data_type == "pre":
+                data = cell_data[data_type] #list of numpy arrays
+                raw_intensities = data[0] # numpy array
+                bkgrnd = data[2][0] # only the background value
+                bk_sub_intensities = raw_intensities - bkgrnd
+                cell_ID[data_type] = bk_sub_intensities
 
+    return all_cells
 
 
 def get_averages(total_cells, compiled_data):
@@ -229,12 +239,14 @@ def get_averages(total_cells, compiled_data):
 
     ave_data = {}
 
-    for cell in compiled_data:
-        curr_cell_data = compiled_data[cell] #dictionary of pre, post, dual
+    bk_sub_data = subtract_bkgrnd(compiled_data)
+
+    for cell in bk_sub_data:
+        curr_cell_data = bk_sub_data[cell] #dictionary of pre, post, dual
         for data_type in curr_cell_data:
             if data_type == "pre":
                 pre_data = curr_cell_data[data_type]
-                numpy.append(pre, pre_data[0])
+                #numpy.append(pre, pre_data[0])
 
             elif data_type == "post":
                 post_data = curr_cell_data[data_type]
@@ -255,7 +267,7 @@ def get_averages(total_cells, compiled_data):
     print("all_post: ", all_post)
     post_mean = numpy.mean(all_post, axis = 0) #finds the mean of each column
     post_stdev = numpy.std(all_post, axis = 0, dtype = None) #finds the stdev of each column
-    final_post_data = [post_mean, post_stdev]
+    final_post_data = [post_mean,]
     ave_data["post"] = final_post_data
 
     dual_tuple = tuple(dual)
@@ -263,9 +275,9 @@ def get_averages(total_cells, compiled_data):
     dual_mean = numpy.mean(all_dual, axis = 0) #finds the mean of each column
     dual_stdev = numpy.std(all_dual, axis = 0) #finds the stdev of each column
     final_dual_data = [dual_mean, dual_stdev]
-    ave_dat["dual"] = final_dual_data
+    ave_data["dual"] = final_dual_data
 
-    return ave_data
+    return all_post, ave_data
 
 
 def plot_post_ints(compiled_data, total_cells):
