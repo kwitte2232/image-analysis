@@ -267,7 +267,7 @@ def get_averages(total_cells, compiled_data):
     print("all_post: ", all_post)
     post_mean = numpy.mean(all_post, axis = 0) #finds the mean of each column
     post_stdev = numpy.std(all_post, axis = 0, dtype = None) #finds the stdev of each column
-    final_post_data = [post_mean,]
+    final_post_data = [post_mean, post_stdev]
     ave_data["post"] = final_post_data
 
     dual_tuple = tuple(dual)
@@ -334,6 +334,6 @@ def plot_averages(ave_data, total_cells):
         time_pt = i + 1
         time.append(time_pt)
 
-    plt.errorbar(plot_aves, time, xerr = post_stdev, yerr = post_stdev)
+    plt.errorbar(time, post_aves, xerr = post_stdev, yerr = post_stdev)
 
     plt.show()
