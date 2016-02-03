@@ -4,12 +4,6 @@
 //
 // Simple macro to read the metadata from an image and store it as text file
 // for parsing.
-//
-//
-//
-//
-//
-
 
 waitForUser("Choose a directory containing the image stacks to be processed.\n \nThe directory should contain only image stacks to be processed.");
 
