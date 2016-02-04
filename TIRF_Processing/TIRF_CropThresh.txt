@@ -1,0 +1,283 @@
+//CropThresh.txt
+//To analyze epdz recruitment in TIRF
+// ** It would be nice to add a cell cycle measurement
+  // ** Maybe daughter cell size?
+
+
+//FUNCTIONS
+function get_cell_measurements(num_frames){
+  //num_frames = integer, number of frames in the stack
+
+  for (k = 1; k <= num_frames; k++){
+      setSlice(k);
+      List.setMeasurements;
+      int_den = List.getValue("IntDen");
+      mean = List.getValue("Mean");
+      area = List.getValue("Area");
+      setResult(image + " Area", k-1, area);
+      setResult(image + " Mean", k-1, mean);
+      setResult(image + " IntDen", k-1, int_den);
+  }
+
+}
+
+function get_bkgrd_measurements(){
+
+  List.setMeasurements;
+  int_den = List.getValue("IntDen");
+  mean = List.getValue("Mean");
+  area = List.getValue("Area");
+  setResult("Bkgrnd Area", 0, area);
+  setResult("Bkgrnd Mean", 0, mean);
+  setResult("Bkgrnd IntDen", 0, int_den);
+
+}
+
+function get_all_measurements(image, dir, cell_num){
+  //image = string, what image are you measuring
+  //dir = string, where to save the data
+  //cell_num = integer, what cell being processed
+
+  selectWindow(image);
+  num_frames = nSlices();
+  setSlice(1);
+  roiManager("select", 0);
+  get_cell_measurements(num_frames);
+
+  selectWindow(image);
+  setSlice(1);
+  roiManager("select", 1);
+  get_bkgrd_measurements();
+
+  updateResults();
+  saveAs("measurements", dir + image + "_" + cell_num +
+      "_intensities.csv");
+
+  if(isOpen("Results")){
+    selectWindow("Results"); //this may need to be what it was saved as
+    run("Close");
+  }
+
+}
+
+
+function closeAllImages()	{
+  //Closes all images
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+//START PROCESSING
+
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+IJ.log("dir: " + dir);
+
+num_expts = getFileList(dir);
+
+for (i = 1; i <= num_expts.length; i++) {
+    curr_expt = num_expts[i];
+    data = getFileList(dir + curr_expt);
+    nom_folder = data[0]; //folders
+    nom_files = getFileList(dir + curr_expt + nom_folder);
+    //IJ.log("nom_files: " + nom_files[0])
+    nom = nom_files[0];
+
+    IJ.log("nom: " + nom);
+    dual = curr_expt + data[1];
+    post = curr_expt + data[2];
+    pre = curr_expt + data[3];
+    procDir = dir + curr_expt + "processedImages/";
+    File.makeDirectory(procDir);
+    IJ.log("procDir: " + procDir);
+
+    //run("Image Sequence...", "open=["+nom+"] sort");
+    open(dir + curr_expt + nom_folder + nom);
+    rename("Nom");
+    run("Duplicate...", "title=Duplicate_Nom");
+    run("Image Sequence...", "open=["+dir + dual+"] increment=2 sort");
+    rename("GFP");
+    gfp_frames = nSlices();
+    run("Duplicate...", "title=Duplicate_GFP duplicate range=1-["+gfp_frames+"]");
+    setSlice(1);
+    run("Duplicate...", "title=temp");
+    run("Image Sequence...", "open=["+dir + dual+"] starting=2 increment=2 sort");
+    rename("RFP_Dual");
+    run("Duplicate...", "title=Duplicate_RFP_Dual duplicate range=1-["+gfp_frames+"]");
+    run("Image Sequence...", "open=["+dir + post+"] sort");
+    rename("Post");
+    post_frames = nSlices();
+    run("Duplicate...", "title=Duplicate_Post duplicate range=1-["+post_frames+"]");
+    run("Image Sequence...", "open=["+dir + pre+"] sort");
+    rename("Pre");
+    pre_frames = nSlices();
+    run("Duplicate...", "title=Duplicate_Pre duplicate range=1-["+pre_frames+"]");
+
+    waitForUser("Debugging");
+
+    // CROP CELLS
+
+    cropCells = getBoolean("Would you like to crop any fields in this directory?");
+
+    if (cropCells) {
+
+    		setBatchMode(true);
+
+    		selectWindow("Duplicate_GFP");
+    		name=getTitle();
+    		selectWindow("temp");
+    		run("8-bit");
+    		rename(name+"_thumb.tif");
+    		setBatchMode(false);
+    		setLocation(50, 50);
+
+    		selectWindow("Duplicate_GFP");
+    		//run("Enhance Contrast", "saturated=0.5");
+    		cropThis = getBoolean("Would you like to crop any cells in this stack?");
+
+    		if (cropThis)	{
+    			numCrops=0;
+
+    			do	{
+    				selectWindow("Duplicate_GFP");
+    				if (numCrops==0)	{
+    					makeRectangle(1, 1, 75, 75);
+    				}
+    				selectWindow("Duplicate_GFP");
+    				waitForUser("Move or resize the ROI and click OK.");
+    				selectWindow(name+"_thumb.tif");
+    				run("Restore Selection");
+    				numCrops++;
+    				cellDir=procDir + "/Cell_" + numCrops + File.separator;
+    				File.makeDirectory(cellDir);
+    				run("Colors...", "foreground=white background=white selection=yellow");
+    				run("Draw");
+    				getSelectionBounds(x, y, width, height);
+    				xText=x+2;
+    				yText=y+15;
+    				setColor(255,255,255);
+    				setFont("SansSerif" , 12, "antialiased");
+    				drawString(numCrops, xText, yText);
+    				saveAs("Tiff", dir + curr_expt + name + "_thumb.tif");
+
+    				//FOR EACH CHANNEL THAT YOU WANT TO CROP, REPEAT THE BLOCK OF CODE CALLED "CHANNEL CROP"
+    					//ALTER SELECTWINDOW() COMMAND AND NAME VARIABLES AS NEEDED
+
+    				//BEGIN "CHANNEL CROP"
+    				selectWindow("Duplicate_GFP");
+    				run("Restore Selection");
+    				run("Duplicate...", "title=temp duplicate");
+    				saveAs("Tiff", cellDir+"GFP_crop"+".tif");
+
+    				selectWindow("Duplicate_RFP_Dual");
+    				run("Restore Selection");
+    				run("Duplicate...", "title=temp duplicate");
+            //waitForUser("Debugging");
+    				if (numCrops <= 9)
+    					saveAs("Tiff", cellDir+"RFP_Dual_crop0"+numCrops+".tif");
+    				else
+    					saveAs("Tiff", cellDir+"RFP_Dual_crop"+numCrops+".tif");
+
+    				selectWindow("Duplicate_Pre");
+    				run("Restore Selection");
+    				run("Duplicate...", "title=temp duplicate");
+            //waitForUser("Debugging");
+    				saveAs("Tiff", cellDir+"Pre_crop"+".tif");
+
+            selectWindow("Duplicate_Post");
+    				run("Restore Selection");
+    				run("Duplicate...", "title=temp duplicate");
+            //waitForUser("Debugging");
+    				saveAs("Tiff", cellDir+"Post_crop"+".tif");
+
+    				selectWindow("Duplicate_Nom");
+    				run("Restore Selection");
+    				run("Duplicate...", "title=temp duplicate");
+    				run("Duplicate...", "title=temp2 duplicate");
+            //waitForUser("Debugging");
+    				saveAs("Tiff", cellDir+"Nom_crop"+".tif");
+
+    				close();
+
+    				selectWindow("temp");
+    				run("Find Edges", "stack");
+    				run("Smooth", "stack");
+    				run("Smooth", "stack");
+    				run("Smooth", "stack");
+    				if (numCrops <= 9)
+    					saveAs("Tiff", cellDir+"Nom_Edges0"+numCrops+".tif");
+    				else
+    					saveAs("Tiff", cellDir+"Nom_Edges"+numCrops+".tif");
+
+    				close();
+
+    				anotherCrop=getBoolean("Would you like to crop another cell in this stack?");
+    			}	while (anotherCrop);
+
+    			selectWindow(name+"_thumb.tif");
+    			saveAs("Tiff", procDir+name+"_thumb.tif");
+    			closeAllImages();
+    		}
+
+    }
+
+    setBatchMode(false);
+
+    // END CROP CELLS
+
+    // CREATE AND PROCESS ROIS
+    makeROIs = getBoolean("Would you like to create ROIs from the cropped cells in this directory?");
+
+    if (makeROIs) {
+        num_cells = getFileList(procDir);
+
+        for (j = 0; j < (num_cells.length - 1) ; j++) {
+            roiManager("Reset")
+            curr_cell = num_cells[j];
+            images = getFileList(procDir + curr_cell);
+            open(procDir + curr_cell + images[0]); //GFP
+            rename("GFP");
+            open(procDir + curr_cell + images[5]); //RFP_Dual
+            rename("RFP_Dual");
+            open(procDir + curr_cell + images[3]); //Post
+            rename("Post");
+            open(procDir + curr_cell + images[4]); //Pre
+            rename("Pre");
+
+            selectWindow("GFP");
+            run("Select None");
+      			setSlice(1);
+      			setAutoThreshold("Li");
+      			run("Threshold...");
+      			run("Create Selection");
+      			resetThreshold();
+            roiManager("Add");
+      			count =r oiManager("count");
+      			roiManager("Select", count-1);
+            roiManager("Rename", "wholeCell");
+
+            selectWindow("GFP");
+      			width = getWidth();
+      			height = getHeight();
+      			makeOval(0, 0, width, height);
+      			run("Make Inverse");
+      			roiManager("Add");
+      			count = roiManager("count");
+      			roiManager("Select", count-1);
+      			roiManager("Rename", "bkgrnd");
+
+            get_all_measurements("Pre", procDir + curr_cell, j);
+            //waitForUser("Debugging");
+            get_all_measurements("RFP_Dual", procDir + curr_cell, j);
+
+            get_all_measurements("Post", procDir + curr_cell, j);
+
+            closeAllImages();
+    }
+    // END CREATE AND PROCESS ROIS
+
+}
+
+closeAllImages()
