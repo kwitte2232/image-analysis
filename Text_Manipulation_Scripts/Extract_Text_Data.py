@@ -7,7 +7,7 @@
 #
 #
 
-
+import re
 
 def open_metadata(metadata, info, num_items):
     '''
@@ -31,10 +31,17 @@ def open_metadata(metadata, info, num_items):
         data_found = False
         imp_data = []
 
+        regex = '.*' + info
+        print(regex)
+
         for line in reader:
             if data_found:
-                while len(imp_data) <= num_items
+                if len(imp_data) <= num_items:
+                #while len(imp_data) <= num_items:
                     imp_data.append(line)
-            elif line == info:
+            elif re.search(regex, line):
+                #print("worked!")
                 data_found = True
                 imp_data.append(line)
+
+        return imp_data
