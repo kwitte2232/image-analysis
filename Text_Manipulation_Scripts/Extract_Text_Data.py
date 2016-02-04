@@ -63,10 +63,10 @@ def extract_data(imp_data, specific_info):
             important_info = data_split[1]
             desired_info = ""
             for char in important_info:
-                if char.isdigit() or char == '.':
+                if char.isdigit():
                     desired_info = desired_info + char
 
-    desired_info = desired_info + '_(s)'
+    desired_info = desired_info + '_(msec)'
     return desired_info
 
 
