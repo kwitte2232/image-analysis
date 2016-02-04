@@ -70,19 +70,33 @@ def extract_data(imp_data, specific_info):
     desired_info = desired_info + '_msec'
     return desired_info
 
-
-
-
 def rename_folders(directory, generic_file_name, info, num_items, specific_info):
     '''
+    Renames folders using information that is extracted from a file
+        within the folder
+
+    Inputs:
+        directory: string, uppermost directory. Folders that will be changed
+            are subdirectories within this directory
+
+        generic_file_name: string, the file from which you will find the data
+            for renaming
+
+        info: string, general info to search for in the file
+
+        num_items: integer, number of items (lines) to extract from the file
+
+        specific_info: string, the key information that you want to use to
+            rename the file with; ie: Exposure Time, and then specifically rename
+            with the info within that text file
+
+    Returns:
+        Nothing. Changes the folder names in place
     '''
 
     for dir_name, expt_dir, dir_files in os.walk(directory):
         for files in dir_files:
             if files == generic_file_name:
-                print("dir_name ", dir_name)
-                print("expt_dir ", expt_dir)
-                print("files ", files)
                 curr_file = dir_name + "/" + files
                 imp_data = open_metadata(curr_file, info, num_items)
                 desired_info = extract_data(imp_data, specific_info)
