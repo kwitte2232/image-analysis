@@ -8,6 +8,7 @@
 #
 
 import re
+import os
 
 def open_metadata(metadata, info, num_items):
     '''
@@ -66,12 +67,24 @@ def extract_data(imp_data, specific_info):
                 if char.isdigit():
                     desired_info = desired_info + char
 
-    desired_info = desired_info + '_(msec)'
+    desired_info = desired_info + '_msec'
     return desired_info
 
 
 
 
-def rename_folders(directory):
+def rename_folders(directory, generic_file_name, info, num_items, specific_info):
     '''
     '''
+
+    for dir_name, expt_dir, dir_files in os.walk(directory):
+        for files in dir_files:
+            if files == generic_file_name:
+                print("dir_name ", dir_name)
+                print("expt_dir ", expt_dir)
+                print("files ", files)
+                curr_file = dir_name + "/" + files
+                imp_data = open_metadata(curr_file, info, num_items)
+                desired_info = extract_data(imp_data, specific_info)
+                new_name = dir_name + "_" + desired_info
+                os.rename(dir_name, new_name)
