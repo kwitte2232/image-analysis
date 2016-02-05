@@ -60,6 +60,26 @@ function get_all_measurements(image, dir, cell_num){
 
 }
 
+function closeCroppedImages() {
+  n = nImages;
+  list = newArray(n);
+  setBatchMode(true);
+  for (i=1; i<=n; i++) {
+                selectImage(i);
+                list[i-1] = getImageID;
+  }
+  setBatchMode(false);
+
+  for (j = 0; j < n; j++) {
+       curr_id = list[j];
+       selectImage(curr_id);
+       ht = getHeight();
+       if (ht < 512){
+           close();
+      }
+  } 
+}
+
 
 function closeAllImages()	{
   //Closes all images
@@ -267,6 +287,8 @@ for (i = 0; i < num_expts.length; i++) {
         				saveAs("Tiff", cellDir + "Cell_" + numCrops + "_position.tif");
                 close();
             }
+
+            closeCroppedImages();
 
     				anotherCrop=getBoolean("Would you like to crop another cell in this stack?");
     			}	while (anotherCrop);
