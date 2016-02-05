@@ -77,39 +77,78 @@ IJ.log("dir: " + dir);
 
 num_expts = getFileList(dir);
 
-for (i = 1; i <= num_expts.length; i++) {
+names = newArray("Current", "Dual", "Post", "Pre")
+images = newArray()
+
+for (i = 0; i < num_expts.length; i++) {
     curr_expt = num_expts[i];
     data = getFileList(dir + curr_expt);
-    nom_folder = data[0]; //folders
-    nom_files = getFileList(dir + curr_expt + nom_folder);
-    //IJ.log("nom_files: " + nom_files[0])
-    nom = nom_files[0];
 
-    IJ.log("nom: " + nom);
-    dual = curr_expt + data[1];
-    post = curr_expt + data[2];
-    pre = curr_expt + data[3];
+    count = 0;
+    for (j = 0; j < data.length; j++){
+        curr_data = data[j];
+        print("curr_data: ", curr_data);
+        if (startsWith(curr_data, "Current")) {
+            nom_folder = data[j];
+            nom_files = getFileList(dir + curr_expt + nom_folder);
+            nom = nom_files[0];
+            count++;
+            print("Worked!");
+        } else if (startsWith(curr_data, "Dual")) {
+            dual = curr_expt + data[j];
+            count++;
+        } else if (startsWith(curr_data, "Post")) {
+            post = curr_expt + data[j];
+            count++;
+        } else if (startsWith(curr_data, "Pre")) {
+            pre = curr_expt + data[j];
+            count++;
+        }
+    }
+
+    if (count == 4) {
+        images = newArray("Current", "Dual", "Post", "Pre");
+    } else {
+        images = newArray("Dual", "Post", "Pre");
+    }
+
+
+    //nom_folder = data[0]; //folders
+    //nom_files = getFileList(dir + curr_expt + nom_folder);
+    //IJ.log("nom_files: " + nom_files[0])
+    //nom = nom_files[0];
+
+    //IJ.log("nom: " + nom);
+    //dual = curr_expt + data[1];
+    //post = curr_expt + data[2];
+    //pre = curr_expt + data[3];
     procDir = dir + curr_expt + "processedImages/";
     File.makeDirectory(procDir);
     IJ.log("procDir: " + procDir);
 
     //run("Image Sequence...", "open=["+nom+"] sort");
-    open(dir + curr_expt + nom_folder + nom);
-    rename("Nom");
-    run("Duplicate...", "title=Duplicate_Nom");
-    run("Image Sequence...", "open=["+dir + dual+"] increment=2 sort");
+    if (images[0] == "Current") {
+        open(dir + curr_expt + nom_folder + nom);
+        rename("Nom");
+        run("Duplicate...", "title=Duplicate_Nom");
+    }
+
+    run("Image Sequence...", "open=["+dir + dual+"] starting=2 increment=2 sort");
     rename("GFP");
     gfp_frames = nSlices();
     run("Duplicate...", "title=Duplicate_GFP duplicate range=1-["+gfp_frames+"]");
     setSlice(1);
     run("Duplicate...", "title=temp");
-    run("Image Sequence...", "open=["+dir + dual+"] starting=2 increment=2 sort");
+
+    run("Image Sequence...", "open=["+dir + dual+"] starting=1 increment=2 sort");
     rename("RFP_Dual");
     run("Duplicate...", "title=Duplicate_RFP_Dual duplicate range=1-["+gfp_frames+"]");
+
     run("Image Sequence...", "open=["+dir + post+"] sort");
     rename("Post");
     post_frames = nSlices();
     run("Duplicate...", "title=Duplicate_Post duplicate range=1-["+post_frames+"]");
+
     run("Image Sequence...", "open=["+dir + pre+"] sort");
     rename("Pre");
     pre_frames = nSlices();
@@ -191,13 +230,15 @@ for (i = 1; i <= num_expts.length; i++) {
     				run("Duplicate...", "title=temp duplicate");
             //waitForUser("Debugging");
     				saveAs("Tiff", cellDir+"Post_crop"+".tif");
+            if (images[0] == "Current") {
+                selectWindow("Duplicate_Nom");
+                run("Restore Selection");
+                run("Duplicate...", "title=temp duplicate");
+                run("Duplicate...", "title=temp2 duplicate");
+                //waitForUser("Debugging");
+                saveAs("Tiff", cellDir+"Nom_crop"+".tif");
+            }
 
-    				selectWindow("Duplicate_Nom");
-    				run("Restore Selection");
-    				run("Duplicate...", "title=temp duplicate");
-    				run("Duplicate...", "title=temp2 duplicate");
-            //waitForUser("Debugging");
-    				saveAs("Tiff", cellDir+"Nom_crop"+".tif");
 
     				close();
 
