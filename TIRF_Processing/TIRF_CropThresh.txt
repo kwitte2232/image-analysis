@@ -77,7 +77,7 @@ function closeCroppedImages() {
        if (ht < 512){
            close();
       }
-  } 
+  }
 }
 
 
