@@ -109,6 +109,8 @@ for (i = 0; i < num_expts.length; i++) {
         images = newArray("Dual", "Post", "Pre");
     }
 
+    count = 0;
+
     procDir = dir + curr_expt + "processedImages/";
     File.makeDirectory(procDir);
     IJ.log("procDir: " + procDir);
@@ -141,7 +143,7 @@ for (i = 0; i < num_expts.length; i++) {
     pre_frames = nSlices();
     run("Duplicate...", "title=Duplicate_Pre duplicate range=1-["+pre_frames+"]");
 
-    waitForUser("Debugging");
+    //waitForUser("Debugging");
 
     // CROP CELLS
 
@@ -273,14 +275,14 @@ for (i = 0; i < num_expts.length; i++) {
         for (j = 0; j < (num_cells.length - 1) ; j++) {
             roiManager("Reset")
             curr_cell = num_cells[j];
-            images = getFileList(procDir + curr_cell);
-            open(procDir + curr_cell + images[0]); //GFP
+            img = getFileList(procDir + curr_cell);
+            open(procDir + curr_cell + img[1]); //GFP
             rename("GFP");
-            open(procDir + curr_cell + images[5]); //RFP_Dual
+            open(procDir + curr_cell + img[6]); //RFP_Dual
             rename("RFP_Dual");
-            open(procDir + curr_cell + images[3]); //Post
+            open(procDir + curr_cell + img[4]); //Post
             rename("Post");
-            open(procDir + curr_cell + images[4]); //Pre
+            open(procDir + curr_cell + img[5]); //Pre
             rename("Pre");
 
             selectWindow("GFP");
