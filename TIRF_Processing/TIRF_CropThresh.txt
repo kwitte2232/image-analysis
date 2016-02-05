@@ -69,6 +69,19 @@ function closeAllImages()	{
 	}
 }
 
+//Prints the array in a human-readable form
+function printArray(array) {
+    string="";
+    for (i=0; i<lengthOf(array); i++) {
+        if (i==0) {
+            string=string+array[i];
+        } else {
+            string=string+", "+array[i];
+        }
+    }
+    print(string);
+}
+
 //START PROCESSING
 
 waitForUser("Choose the current directory");
@@ -76,29 +89,32 @@ dir=getDirectory("Choose a Directory");
 IJ.log("dir: " + dir);
 
 num_expts = getFileList(dir);
+print("num_expts.length: " + num_expts.length);
+printArray(num_expts);
 
 for (i = 0; i < num_expts.length; i++) {
     curr_expt = num_expts[i];
+    print("curr_expt: " + curr_expt);
     data = getFileList(dir + curr_expt);
 
     count = 0;
-    for (j = 0; j < data.length; j++){
-        curr_data = data[j];
+    for (m = 0; m < data.length; m++){
+        curr_data = data[m];
         print("curr_data: ", curr_data);
         if (startsWith(curr_data, "Current")) {
-            nom_folder = data[j];
+            nom_folder = data[m];
             nom_files = getFileList(dir + curr_expt + nom_folder);
             nom = nom_files[0];
             count++;
             print("Worked!");
         } else if (startsWith(curr_data, "Dual")) {
-            dual = curr_expt + data[j];
+            dual = curr_expt + data[m];
             count++;
         } else if (startsWith(curr_data, "Post")) {
-            post = curr_expt + data[j];
+            post = curr_expt + data[m];
             count++;
         } else if (startsWith(curr_data, "Pre")) {
-            pre = curr_expt + data[j];
+            pre = curr_expt + data[m];
             count++;
         }
     }
@@ -255,8 +271,8 @@ for (i = 0; i < num_expts.length; i++) {
     				anotherCrop=getBoolean("Would you like to crop another cell in this stack?");
     			}	while (anotherCrop);
 
-    			selectWindow(name+"_thumb.tif");
-    			saveAs("Tiff", procDir+name+"_thumb.tif");
+    			//selectWindow(name+"_thumb.tif");
+    			//saveAs("Tiff", procDir+name+"_thumb.tif");
     			closeAllImages();
     		}
 
@@ -318,5 +334,6 @@ for (i = 0; i < num_expts.length; i++) {
     // END CREATE AND PROCESS ROIS
 
 }
+}
 
-closeAllImages()
+closeAllImages();
