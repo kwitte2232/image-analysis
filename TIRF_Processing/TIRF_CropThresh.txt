@@ -77,9 +77,6 @@ IJ.log("dir: " + dir);
 
 num_expts = getFileList(dir);
 
-names = newArray("Current", "Dual", "Post", "Pre")
-images = newArray()
-
 for (i = 0; i < num_expts.length; i++) {
     curr_expt = num_expts[i];
     data = getFileList(dir + curr_expt);
@@ -112,16 +109,6 @@ for (i = 0; i < num_expts.length; i++) {
         images = newArray("Dual", "Post", "Pre");
     }
 
-
-    //nom_folder = data[0]; //folders
-    //nom_files = getFileList(dir + curr_expt + nom_folder);
-    //IJ.log("nom_files: " + nom_files[0])
-    //nom = nom_files[0];
-
-    //IJ.log("nom: " + nom);
-    //dual = curr_expt + data[1];
-    //post = curr_expt + data[2];
-    //pre = curr_expt + data[3];
     procDir = dir + curr_expt + "processedImages/";
     File.makeDirectory(procDir);
     IJ.log("procDir: " + procDir);
@@ -232,27 +219,36 @@ for (i = 0; i < num_expts.length; i++) {
     				saveAs("Tiff", cellDir+"Post_crop"+".tif");
             if (images[0] == "Current") {
                 selectWindow("Duplicate_Nom");
+                run("Duplicate...", "title=Nom_temp duplicate");
                 run("Restore Selection");
                 run("Duplicate...", "title=temp duplicate");
                 run("Duplicate...", "title=temp2 duplicate");
                 //waitForUser("Debugging");
                 saveAs("Tiff", cellDir+"Nom_crop"+".tif");
+                close();
+
+    				    selectWindow("temp");
+    				    run("Find Edges", "stack");
+    				    run("Smooth", "stack");
+    			      run("Smooth", "stack");
+    			      run("Smooth", "stack");
+    				    if (numCrops <= 9) {
+    					         saveAs("Tiff", cellDir+"Nom_Edges0"+numCrops+".tif");
+    				    } else {
+    					         saveAs("Tiff", cellDir+"Nom_Edges"+numCrops+".tif");
+                }
+                close();
+                selectWindow("Nom_temp");
+                run("Restore Selection");
+                List.setMeasurements();
+                x = List.getValue("X");
+                y = List.getValue("Y");
+        				setColor(255,255,255);
+        				setFont("SansSerif" , 12, "antialiased");
+        				drawString(numCrops, x, y);
+        				saveAs("Tiff", cellDir + "Cell_" + numCrops + "_position.tif");
+                close();
             }
-
-
-    				close();
-
-    				selectWindow("temp");
-    				run("Find Edges", "stack");
-    				run("Smooth", "stack");
-    				run("Smooth", "stack");
-    				run("Smooth", "stack");
-    				if (numCrops <= 9)
-    					saveAs("Tiff", cellDir+"Nom_Edges0"+numCrops+".tif");
-    				else
-    					saveAs("Tiff", cellDir+"Nom_Edges"+numCrops+".tif");
-
-    				close();
 
     				anotherCrop=getBoolean("Would you like to crop another cell in this stack?");
     			}	while (anotherCrop);
@@ -295,7 +291,7 @@ for (i = 0; i < num_expts.length; i++) {
       			run("Create Selection");
       			resetThreshold();
             roiManager("Add");
-      			count =r oiManager("count");
+      			count =roiManager("count");
       			roiManager("Select", count-1);
             roiManager("Rename", "wholeCell");
 
@@ -310,7 +306,7 @@ for (i = 0; i < num_expts.length; i++) {
       			roiManager("Rename", "bkgrnd");
 
             get_all_measurements("Pre", procDir + curr_cell, j);
-            //waitForUser("Debugging");
+
             get_all_measurements("RFP_Dual", procDir + curr_cell, j);
 
             get_all_measurements("Post", procDir + curr_cell, j);
