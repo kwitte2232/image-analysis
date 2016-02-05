@@ -10,6 +10,20 @@ from itertools import izip
 #import math
 import matplotlib.pyplot as plt
 
+from PIL import Image
+from PIL.ExifTags import TAGS
+
+def get_exif(fn):
+    ret = {}
+    i = Image.open(fn)
+    print(i)
+    #im = i.load()
+    info = i._getexif()
+    for tag, value in info.items():
+        decoded = TAGS.get(tag, tag)
+        ret[decoded] = value
+    return ret
+
 
 
 # In this script the goal is to combine multiple csv files
