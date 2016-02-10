@@ -160,7 +160,7 @@ def compile_data(all_data):
     for field in all_data:
         curr_field = all_data[field] #dictionary
         for cell in curr_field:
-            pre_data = [0]*3
+            pre_data = [0]*2
             post_data = [0]*2
             dual_data = [0]*2
             print("pre_data ", pre_data)
@@ -178,14 +178,15 @@ def compile_data(all_data):
                 if measurement == "pre":
                     for key, value in curr_data.items():
                         if key == "Pre Mean":
-                            num_values = len(value) #value is a numpy array
-                            pre_average = numpy.asarray(numpy.mean(value))
-                            pre_stdev = numpy.asarray(numpy.std(value))
-                            pre_data[0] = pre_average
-                            pre_data[1] = pre_stdev
-                            compiled_data[cell_tag]["pre"] = pre_data
+                            #num_values = len(value) #value is a numpy array
+                            #pre_average = numpy.asarray(numpy.mean(value))
+                            #pre_stdev = numpy.asarray(numpy.std(value))
+                            #pre_data[0] = pre_average
+                            #pre_data[1] = pre_stdev
+                            #compiled_data[cell_tag]["pre"] = pre_data
+                            pre_data[0] = value[:]
                         elif key == "Bkgrnd Mean":
-                            pre_data[2] = value[:]
+                            pre_data[1] = value[:]
                                 #This should make a copy...
                         compiled_data[cell_tag]["pre"] = pre_data
 
@@ -247,7 +248,6 @@ def get_averages(total_cells, compiled_data):
         for data_type in curr_cell_data:
             if data_type == "pre":
                 pre_data = curr_cell_data[data_type]
-                #numpy.append(pre, pre_data[0])
 
             elif data_type == "post":
                 post_data = curr_cell_data[data_type]
@@ -347,33 +347,36 @@ def plot_averages(ave_data, total_cells):
     post_aves = post_data[0]
     post_stdev = post_data[1]
 
-    total_time = len(post_aves)
-    time = []
-    for i in range(total_time):
-        time_pt = i + 1
-        time.append(time_pt)
-
     print(pre_aves)
-    print(time)
-    pre = [pre_aves]*len(time)
+    #print(time)
+    pre = [pre_aves]*20
 
-    last_dual = dual_aves[-1]
+    #last_dual = dual_aves[-1]
     num_duals = len(dual_aves)
 
-    time_increment = len(time)/5
-    diff = time_increment - num_duals
+    #time_increment = len(time)/5
+    #diff = time_increment - num_duals
 
-
-    total_dual_time = time_increment
+    #total_dual_time = time_increment
     time_dual = []
     for i in range(num_duals):
-        time_pt = i*5
+        time_pt = (i*5) + 20
         time_dual.append(time_pt)
 
-    print(time_dual)
+    total_time = len(post_aves)
+    last_dual_time = time_dual[-1]
+    time_post = []
+    for i in range(total_time):
+        time_pt = last_dual_time + i + 1
+        time_post.append(time_pt)
 
-    plt.errorbar(time, post_aves, yerr = post_stdev)
-    plt.errorbar(time, pre, yerr = pre_stdev)
+    time_pre = [i for i in range(20)]
+    print(time_pre)
+    print(time_dual)
+    print(time_post)
+
+    plt.errorbar(time_post, post_aves, yerr = post_stdev)
+    plt.errorbar(time_pre, pre, yerr = pre_stdev)
     plt.errorbar(time_dual, dual_aves, yerr = dual_stdev)
 
     plt.show()
