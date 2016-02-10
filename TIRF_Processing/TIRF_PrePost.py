@@ -1,31 +1,4 @@
 
-
-#IMPORTS
-import sys
-import os
-import csv
-import re
-import numpy
-from itertools import izip
-#import math
-import matplotlib.pyplot as plt
-
-from PIL import Image
-from PIL.ExifTags import TAGS
-
-def get_exif(fn):
-    ret = {}
-    i = Image.open(fn)
-    print(i)
-    #im = i.load()
-    info = i._getexif()
-    for tag, value in info.items():
-        decoded = TAGS.get(tag, tag)
-        ret[decoded] = value
-    return ret
-
-
-
 # In this script the goal is to combine multiple csv files
 # generated from intensity measurements of pre, dual, and
 # post images from TIRF illumination.
@@ -43,6 +16,19 @@ def get_exif(fn):
 #
 #
 #
+
+
+#IMPORTS
+import sys
+import os
+import csv
+import re
+import numpy
+from itertools import izip
+#import math
+import matplotlib.pyplot as plt
+
+#FUNCTIONS
 
 def flip_csvs(directory, filename):
     '''
@@ -145,8 +131,8 @@ def build_data(expt_dir, row_names):
         if re.search('(.)*Trans', dir_name):
             split_dir_name = dir_name.split('/')
             print(split_dir_name)
-            field_name = split_dir_name[5]
-            cell = split_dir_name[7]
+            field_name = split_dir_name[8]
+            cell = split_dir_name[10]
             if field_name not in all_data:
                 all_data[field_name] = {}
             field_dict = all_data[field_name]
@@ -173,10 +159,11 @@ def compile_data(all_data):
     total_cells = 0
     for field in all_data:
         curr_field = all_data[field] #dictionary
-        pre_data = [0]*3
-        post_data = [0]*2
-        dual_data = [0]*2
         for cell in curr_field:
+            pre_data = [0]*3
+            post_data = [0]*2
+            dual_data = [0]*2
+            print("pre_data ", pre_data)
             total_cells += 1
             curr_cell = curr_field[cell] #dictionary
             cell_tag = field + "_" + cell
@@ -269,6 +256,8 @@ def get_averages(total_cells, compiled_data):
             elif data_type == "dual":
                 dual_data = curr_cell_data[data_type]
                 dual.append(dual_data)
+                if len(dual) == 5 or len(dual) == 8:
+                    print("cell: ", cell)
 
     pre_mean = numpy.mean(pre)
     pre_stdev = numpy.std(pre)
@@ -276,15 +265,22 @@ def get_averages(total_cells, compiled_data):
     ave_data["pre"] = final_pre_data
 
     post_tuple = tuple(post)
-    print("post_tuple ", post_tuple)
+    #print("post_tuple ", post_tuple)
     all_post = numpy.vstack(post_tuple)
-    print("all_post: ", all_post)
+    #print("all_post: ", all_post)
     post_mean = numpy.mean(all_post, axis = 0) #finds the mean of each column
     post_stdev = numpy.std(all_post, axis = 0, dtype = None) #finds the stdev of each column
     final_post_data = [post_mean, post_stdev]
     ave_data["post"] = final_post_data
 
+    for array in dual:
+        length = len(array)
+        if length > 12:
+            dual.remove(array)
+        print("length: ", length)
+
     dual_tuple = tuple(dual)
+    print(dual_tuple)
     all_dual = numpy.vstack(dual_tuple)
     dual_mean = numpy.mean(all_dual, axis = 0) #finds the mean of each column
     dual_stdev = numpy.std(all_dual, axis = 0) #finds the stdev of each column
@@ -308,10 +304,11 @@ def plot_post_ints(compiled_data, total_cells):
         for data_type in cell_data:
             if data_type == "post":
                 post_data = cell_data[data_type] #list of numpy arrays
-                raw_intensities = post_data[0] # numpy array
-                bkgrnd = post_data[1][0] # only the background value
-                bk_sub_intensities = raw_intensities - bkgrnd
-                all_cells.append(bk_sub_intensities)
+                raw_intensities = post_data # numpy array
+                print("raw ", raw_intensities)
+                #bkgrnd = post_data[1][0] # only the background value
+                #bk_sub_intensities = raw_intensities - bkgrnd
+                all_cells.append(raw_intensities)
                 total_time = len(raw_intensities)
 
     time = []
@@ -333,10 +330,18 @@ def plot_post_ints(compiled_data, total_cells):
 def plot_averages(ave_data, total_cells):
 
     post_data = ave_data["post"] #list of 2 numpy arrays, one for aves other std
-    dual_aves = ave_data["dual"] #list of 2 numpy arrays, one for aves other std
+    dual_data = ave_data["dual"] #list of 2 numpy arrays, one for aves other std
     pre_data = ave_data["pre"] #list of 2 elements, 0th = ave, 1st = std
 
     fig = plt.figure()
+
+    #pre data
+    pre_aves = pre_data[0]
+    pre_stdev = pre_data[1]
+
+    #dual data
+    dual_aves = dual_data[0]
+    dual_stdev = dual_data[1]
 
     #post data
     post_aves = post_data[0]
@@ -348,6 +353,27 @@ def plot_averages(ave_data, total_cells):
         time_pt = i + 1
         time.append(time_pt)
 
-    plt.errorbar(time, post_aves, xerr = post_stdev, yerr = post_stdev)
+    print(pre_aves)
+    print(time)
+    pre = [pre_aves]*len(time)
+
+    last_dual = dual_aves[-1]
+    num_duals = len(dual_aves)
+
+    time_increment = len(time)/5
+    diff = time_increment - num_duals
+
+
+    total_dual_time = time_increment
+    time_dual = []
+    for i in range(num_duals):
+        time_pt = i*5
+        time_dual.append(time_pt)
+
+    print(time_dual)
+
+    plt.errorbar(time, post_aves, yerr = post_stdev)
+    plt.errorbar(time, pre, yerr = pre_stdev)
+    plt.errorbar(time_dual, dual_aves, yerr = dual_stdev)
 
     plt.show()
