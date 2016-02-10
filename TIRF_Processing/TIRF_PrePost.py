@@ -24,9 +24,10 @@ import os
 import csv
 import re
 import numpy
-from itertools import izip
-#import math
 import matplotlib.pyplot as plt
+from scipy import stats
+from itertools import izip
+
 
 #FUNCTIONS
 
@@ -255,14 +256,14 @@ def get_averages(total_cells, compiled_data):
     pre_tuple = tuple(pre)
     all_pre = numpy.vstack(pre_tuple)
     pre_mean = numpy.mean(all_pre, axis = 0) #finds the mean of each column
-    pre_stdev = numpy.std(all_pre, axis = 0, dtype = None) #finds the stdev of each column
+    pre_stdev = stats.sem(all_pre, axis = 0) #finds the stdev of each column
     final_pre_data = [pre_mean, pre_stdev]
     ave_data["pre"] = final_pre_data
 
     post_tuple = tuple(post)
     all_post = numpy.vstack(post_tuple)
     post_mean = numpy.mean(all_post, axis = 0) #finds the mean of each column
-    post_stdev = numpy.std(all_post, axis = 0, dtype = None) #finds the stdev of each column
+    post_stdev = stats.sem(all_post, axis = 0) #finds the stdev of each column
     final_post_data = [post_mean, post_stdev]
     ave_data["post"] = final_post_data
 
@@ -276,7 +277,7 @@ def get_averages(total_cells, compiled_data):
     print(dual_tuple)
     all_dual = numpy.vstack(dual_tuple)
     dual_mean = numpy.mean(all_dual, axis = 0) #finds the mean of each column
-    dual_stdev = numpy.std(all_dual, axis = 0) #finds the stdev of each column
+    dual_stdev = stats.sem(all_dual, axis = 0) #finds the stdev of each column
     final_dual_data = [dual_mean, dual_stdev]
     ave_data["dual"] = final_dual_data
 
@@ -342,11 +343,13 @@ def plot_averages(ave_data, total_cells):
 
     print(pre_aves)
 
-    num_duals = len(dual_aves)
+    num_pre = len(pre_aves)
+    time_pre = [i for i in range(num_pre)]
 
+    num_duals = len(dual_aves)
     time_dual = []
     for i in range(num_duals):
-        time_pt = (i*5) + 20
+        time_pt = (i*5) + num_pre
         time_dual.append(time_pt)
 
     total_time = len(post_aves)
@@ -356,7 +359,7 @@ def plot_averages(ave_data, total_cells):
         time_pt = last_dual_time + i + 1
         time_post.append(time_pt)
 
-    time_pre = [i for i in range(20)]
+
     print(time_pre)
     print(time_dual)
     print(time_post)
