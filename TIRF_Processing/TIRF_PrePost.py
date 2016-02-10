@@ -178,12 +178,6 @@ def compile_data(all_data):
                 if measurement == "pre":
                     for key, value in curr_data.items():
                         if key == "Pre Mean":
-                            #num_values = len(value) #value is a numpy array
-                            #pre_average = numpy.asarray(numpy.mean(value))
-                            #pre_stdev = numpy.asarray(numpy.std(value))
-                            #pre_data[0] = pre_average
-                            #pre_data[1] = pre_stdev
-                            #compiled_data[cell_tag]["pre"] = pre_data
                             pre_data[0] = value[:]
                         elif key == "Bkgrnd Mean":
                             pre_data[1] = value[:]
@@ -217,16 +211,16 @@ def subtract_bkgrnd(compiled_data):
             all_cells[cell] = {}
         cell_ID = all_cells[cell] # empty dict
         for data_type in cell_data:
-            if data_type == "post" or data_type == "dual":
+            #if data_type == "post" or data_type == "dual":
                 data = cell_data[data_type] #list of numpy arrays
                 raw_intensities = data[0] # numpy array
                 bkgrnd = data[1][0] # only the background value
                 bk_sub_intensities = raw_intensities - bkgrnd
                 cell_ID[data_type] = bk_sub_intensities
-            elif data_type == "pre":
+            #elif data_type == "pre":
                 data = cell_data[data_type] #list of numpy arrays
                 raw_intensities = data[0] # numpy array
-                bkgrnd = data[2][0] # only the background value
+                bkgrnd = data[1][0] # only the background value
                 bk_sub_intensities = raw_intensities - bkgrnd
                 cell_ID[data_type] = bk_sub_intensities
 
@@ -235,7 +229,7 @@ def subtract_bkgrnd(compiled_data):
 
 def get_averages(total_cells, compiled_data):
 
-    pre = numpy.array(total_cells)
+    pre = []
     post = []
     dual = []
 
@@ -248,6 +242,7 @@ def get_averages(total_cells, compiled_data):
         for data_type in curr_cell_data:
             if data_type == "pre":
                 pre_data = curr_cell_data[data_type]
+                pre.append(pre_data)
 
             elif data_type == "post":
                 post_data = curr_cell_data[data_type]
@@ -256,18 +251,16 @@ def get_averages(total_cells, compiled_data):
             elif data_type == "dual":
                 dual_data = curr_cell_data[data_type]
                 dual.append(dual_data)
-                if len(dual) == 5 or len(dual) == 8:
-                    print("cell: ", cell)
 
-    pre_mean = numpy.mean(pre)
-    pre_stdev = numpy.std(pre)
+    pre_tuple = tuple(pre)
+    all_pre = numpy.vstack(pre_tuple)
+    pre_mean = numpy.mean(all_pre, axis = 0) #finds the mean of each column
+    pre_stdev = numpy.std(all_pre, axis = 0, dtype = None) #finds the stdev of each column
     final_pre_data = [pre_mean, pre_stdev]
     ave_data["pre"] = final_pre_data
 
     post_tuple = tuple(post)
-    #print("post_tuple ", post_tuple)
     all_post = numpy.vstack(post_tuple)
-    #print("all_post: ", all_post)
     post_mean = numpy.mean(all_post, axis = 0) #finds the mean of each column
     post_stdev = numpy.std(all_post, axis = 0, dtype = None) #finds the stdev of each column
     final_post_data = [post_mean, post_stdev]
@@ -348,16 +341,9 @@ def plot_averages(ave_data, total_cells):
     post_stdev = post_data[1]
 
     print(pre_aves)
-    #print(time)
-    pre = [pre_aves]*20
 
-    #last_dual = dual_aves[-1]
     num_duals = len(dual_aves)
 
-    #time_increment = len(time)/5
-    #diff = time_increment - num_duals
-
-    #total_dual_time = time_increment
     time_dual = []
     for i in range(num_duals):
         time_pt = (i*5) + 20
@@ -376,7 +362,7 @@ def plot_averages(ave_data, total_cells):
     print(time_post)
 
     plt.errorbar(time_post, post_aves, yerr = post_stdev)
-    plt.errorbar(time_pre, pre, yerr = pre_stdev)
+    plt.errorbar(time_pre, pre_aves, yerr = pre_stdev)
     plt.errorbar(time_dual, dual_aves, yerr = dual_stdev)
 
     plt.show()
