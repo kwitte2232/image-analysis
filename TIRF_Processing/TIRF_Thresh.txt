@@ -1,0 +1,178 @@
+//FUNCTIONS
+function get_cell_measurements(num_frames){
+  //num_frames = integer, number of frames in the stack
+
+  for (k = 1; k <= num_frames; k++){
+      setSlice(k);
+      List.setMeasurements;
+      int_den = List.getValue("IntDen");
+      mean = List.getValue("Mean");
+      area = List.getValue("Area");
+      setResult(image + " Area", k-1, area);
+      setResult(image + " Mean", k-1, mean);
+      setResult(image + " IntDen", k-1, int_den);
+  }
+
+}
+
+function get_bkgrd_measurements(){
+
+  List.setMeasurements;
+  int_den = List.getValue("IntDen");
+  mean = List.getValue("Mean");
+  area = List.getValue("Area");
+  setResult("Bkgrnd Area", 0, area);
+  setResult("Bkgrnd Mean", 0, mean);
+  setResult("Bkgrnd IntDen", 0, int_den);
+
+}
+
+function get_all_measurements(image, dir, cell_num){
+  //image = string, what image are you measuring
+  //dir = string, where to save the data
+  //cell_num = integer, what cell being processed
+
+  selectWindow(image);
+  num_frames = nSlices();
+  setSlice(1);
+  roiManager("select", 1);
+  get_cell_measurements(num_frames);
+
+  selectWindow(image);
+  setSlice(1);
+  roiManager("select", 2);
+  get_bkgrd_measurements();
+
+  updateResults();
+  saveAs("measurements", dir + image + "_" + cell_num +
+      "_intensities.csv");
+
+  if(isOpen("Results")){
+    selectWindow("Results"); //this may need to be what it was saved as
+    run("Close");
+  }
+
+}
+
+function closeCroppedImages() {
+  n = nImages;
+  list = newArray(n);
+  setBatchMode(true);
+  for (i=1; i<=n; i++) {
+                selectImage(i);
+                list[i-1] = getImageID;
+  }
+  setBatchMode(false);
+
+  for (j = 0; j < n; j++) {
+       curr_id = list[j];
+       selectImage(curr_id);
+       ht = getHeight();
+       if (ht < 512){
+           close();
+      }
+  }
+}
+
+
+function closeAllImages()	{
+  //Closes all images
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+//Prints the array in a human-readable form
+function printArray(array) {
+    string="";
+    for (i=0; i<lengthOf(array); i++) {
+        if (i==0) {
+            string=string+array[i];
+        } else {
+            string=string+", "+array[i];
+        }
+    }
+    print(string);
+}
+// CREATE AND PROCESS ROIS
+
+waitForUser("Choose the current directory");
+dir = getDirectory("Choose a Directory");
+IJ.log("dir: " + dir);
+
+num_expts = getFileList(dir);
+print("num_expts.length: " + num_expts.length);
+printArray(num_expts);
+
+for (i = 0; i < num_expts.length; i++) {
+    curr_expt = num_expts[i];
+    print("curr_expt: " + curr_expt);
+    procDir = dir + curr_expt + "processedImages/";
+
+    makeROIs = getBoolean("Would you like to create ROIs from the cropped cells in this directory?");
+
+    if (makeROIs) {
+      num_cells = getFileList(procDir);
+
+      for (j = 0; j < (num_cells.length - 1) ; j++) {
+        roiManager("Reset")
+        curr_cell = num_cells[j];
+        print("curr_cell: " + curr_cell);
+        img = getFileList(procDir + curr_cell);
+        open(procDir + curr_cell + img[1]); //GFP
+        rename("GFP");
+        open(procDir + curr_cell + img[6]); //RFP_Dual
+        rename("RFP_Dual");
+        open(procDir + curr_cell + img[4]); //Post
+        rename("Post");
+        open(procDir + curr_cell + img[5]); //Pre
+        rename("Pre");
+
+        selectWindow("GFP");
+        run("Select None");
+        setSlice(1);
+        setAutoThreshold("Li");
+        run("Threshold...");
+        run("Create Selection");
+        resetThreshold();
+        roiManager("Add");
+        count =roiManager("count");
+        roiManager("Select", count-1);
+        roiManager("Rename", "wholeCell");
+
+        selectWindow("GFP");
+        run("Select None");
+        setSlice(1);
+        roiManager("Select", count-1);
+        run("Fit Ellipse");
+        roiManager("Add");
+        count =roiManager("count");
+        roiManager("Select", count-1);
+        roiManager("Rename", "wholeCellEllipse");
+
+        selectWindow("GFP");
+        width = getWidth();
+        height = getHeight();
+        makeOval(0, 0, width, height);
+        run("Make Inverse");
+        roiManager("Add");
+        count = roiManager("count");
+        roiManager("Select", count-1);
+        roiManager("Rename", "bkgrnd");
+
+        get_all_measurements("Pre", procDir + curr_cell, j);
+
+        get_all_measurements("RFP_Dual", procDir + curr_cell, j);
+
+        get_all_measurements("Post", procDir + curr_cell, j);
+
+        closeAllImages();
+        roiManager("Save", procDir + curr_cell + "_ROIs.zip");
+      }
+// END CREATE AND PROCESS ROIS
+
+    }
+}
+
+closeAllImages();
