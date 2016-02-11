@@ -175,7 +175,7 @@ def compile_data(all_data):
             pre_data = [0]*2
             post_data = [0]*2
             dual_data = [0]*2
-            print("pre_data ", pre_data)
+            #print("pre_data ", pre_data)
             curr_cell = curr_field[cell] #dictionary
             cell_tag = field + "_" + cell
             field_dict[cell_tag] = {}
@@ -295,7 +295,7 @@ def get_expt_averages(expt_data):
         print("length: ", length)
 
     dual_tuple = tuple(dual)
-    print(dual_tuple)
+    #print(dual_tuple)
     all_dual = numpy.vstack(dual_tuple)
     dual_mean = numpy.mean(all_dual, axis = 0) #finds the mean of each column
     dual_sem = stats.sem(all_dual, axis = 0) #finds the stdev of each column
@@ -345,17 +345,21 @@ def make_all_plots(data, total_cells_dict, plotting_fxn, directory, title):
 
     for field in data:
         expt_data = data[field]
-        print(field)
+        #print(field)
         total_cells = total_cells_dict[field]
-        figure = plotting_fxn(expt_data, total_cells)
-        ##field is the folder name; can be title later? Need to extract
-            #maybe extract and then add to title...
-        save_to = directory + '/' + field + '/' + 'aves.pdf'
-        print(save_to)
-        plt.savefig(save_to)
-        #return figure
 
-def plot_averages(ave_data, total_cells):
+        split_field = field.split('_')
+        exposure = split_field[2] + 'sec'
+        new = exposure[0] + '.' + exposure[1:]
+        field_title = title + ' (' + new + ')'
+
+        figure = plotting_fxn(expt_data, total_cells, field_title)
+
+        save_to = directory + '/' + field + '/' + exposure + '_Aves.pdf'
+        #print(save_to)
+        plt.savefig(save_to)
+
+def plot_averages(ave_data, total_cells, title):
 
     post_data = ave_data["post"] #list of 2 numpy arrays, one for aves other std
     dual_data = ave_data["dual"] #list of 2 numpy arrays, one for aves other std
@@ -375,7 +379,7 @@ def plot_averages(ave_data, total_cells):
     post_aves = post_data[0]
     post_sem = post_data[1]
 
-    print(pre_aves)
+    #print(pre_aves)
 
     num_pre = len(pre_aves)
     time_pre = [i for i in range(num_pre)]
@@ -399,13 +403,21 @@ def plot_averages(ave_data, total_cells):
     #time_post = [(i + last_dual_time + 1) for in in range(total_time)]
         #List comprehension
 
-    print(time_pre)
-    print(time_dual)
-    print(time_post)
+    #print(time_pre)
+    #print(time_dual)
+    #print(time_post)
 
-    plt.errorbar(time_post, post_aves, yerr = post_sem)
-    plt.errorbar(time_pre, pre_aves, yerr = pre_sem)
-    plt.errorbar(time_dual, dual_aves, yerr = dual_sem)
+    plt.errorbar(time_pre, pre_aves, yerr = pre_sem, label = "pre", color = "blue")
+    plt.errorbar(time_dual, dual_aves, yerr = dual_sem, label = "activation", color = "red")
+    plt.errorbar(time_post, post_aves, yerr = post_sem, label = "post", color = "green")
+
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Intensity (A.U.)")
+    plt.title(title)
+    plt.legend()
+
+    axes = plt.gca()
+    axes.set_ylim(0, 150)
 
     #plt.show()
 
