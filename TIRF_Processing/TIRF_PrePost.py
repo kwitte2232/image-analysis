@@ -416,6 +416,9 @@ def plot_averages(ave_data, total_cells, title):
     plt.title(title)
     plt.legend()
 
+    num_cells = "N cells = " + str(total_cells)
+    plt.text(200, 110, num_cells, fontsize = 12)
+
     axes = plt.gca()
     axes.set_ylim(0, 150)
 
