@@ -131,9 +131,14 @@ def build_data(expt_dir, row_names):
     for dir_name, field_dir, dir_files in os.walk(expt_dir):
         if re.search('(.)*Trans', dir_name):
             split_dir_name = dir_name.split('/')
+            # ['', 'Users', 'Kristen', 'Desktop', 'TIRF_Gradient_Intensity_Recruitment',
+            #'kristen_8341_349_01202016', 'Experiments', '8341', '8341_9_02_msec',
+            #'processedImages', 'Cell_1', 'Trans']
+
             print(split_dir_name)
-            field_name = split_dir_name[8]
-            cell = split_dir_name[10]
+
+            field_name = split_dir_name[8] #'8341_9_02_msec'
+            cell = split_dir_name[10] #'Cell_X'
             if field_name not in all_data:
                 all_data[field_name] = {}
             field_dict = all_data[field_name]
@@ -157,18 +162,23 @@ def build_data(expt_dir, row_names):
 def compile_data(all_data):
 
     compiled_data = {}
-    total_cells = 0
+    total_cells_dict = {}
     for field in all_data:
+        compiled_data[field] = {}
+        field_dict = compiled_data[field]
         curr_field = all_data[field] #dictionary
         for cell in curr_field:
+            if field not in total_cells_dict:
+                total_cells_dict[field] = 1
+            else:
+                total_cells_dict[field] += 1
             pre_data = [0]*2
             post_data = [0]*2
             dual_data = [0]*2
             print("pre_data ", pre_data)
-            total_cells += 1
             curr_cell = curr_field[cell] #dictionary
             cell_tag = field + "_" + cell
-            compiled_data[cell_tag] = {}
+            field_dict[cell_tag] = {}
             for measurement in curr_cell:
                 curr_data = curr_cell[measurement]
                 #dictionary with lists of intensities as values
@@ -183,7 +193,7 @@ def compile_data(all_data):
                         elif key == "Bkgrnd Mean":
                             pre_data[1] = value[:]
                                 #This should make a copy...
-                        compiled_data[cell_tag]["pre"] = pre_data
+                        compiled_data[field][cell_tag]["pre"] = pre_data
 
                 elif measurement == "dual":
                     for key, value in curr_data.items():
@@ -191,7 +201,7 @@ def compile_data(all_data):
                             dual_data[0] = value[:]
                         elif key == "Bkgrnd Mean":
                             dual_data[1] = value[:]
-                        compiled_data[cell_tag]["dual"] = dual_data
+                        compiled_data[field][cell_tag]["dual"] = dual_data
 
                 elif measurement == "post":
                     for key, value in curr_data.items():
@@ -199,9 +209,9 @@ def compile_data(all_data):
                             post_data[0] = value[:]
                         elif key == "Bkgrnd Mean":
                             post_data[1] = value[:]
-                        compiled_data[cell_tag]["post"] = post_data
+                        compiled_data[field][cell_tag]["post"] = post_data
 
-    return total_cells, compiled_data
+    return total_cells_dict, compiled_data
 
 def subtract_bkgrnd(compiled_data):
 
@@ -227,8 +237,19 @@ def subtract_bkgrnd(compiled_data):
 
     return all_cells
 
+def get_averages(compiled_data):
 
-def get_averages(total_cells, compiled_data):
+    all_aves = {}
+
+    for field in compiled_data:
+        expt_data = compiled_data[field]
+        field_ave = get_expt_averages(expt_data)
+        all_aves[field] = field_ave
+
+    return all_aves
+
+
+def get_expt_averages(expt_data):
 
     pre = []
     post = []
@@ -236,7 +257,7 @@ def get_averages(total_cells, compiled_data):
 
     ave_data = {}
 
-    bk_sub_data = subtract_bkgrnd(compiled_data)
+    bk_sub_data = subtract_bkgrnd(expt_data)
 
     for cell in bk_sub_data:
         curr_cell_data = bk_sub_data[cell] #dictionary of pre, post, dual
@@ -256,15 +277,15 @@ def get_averages(total_cells, compiled_data):
     pre_tuple = tuple(pre)
     all_pre = numpy.vstack(pre_tuple)
     pre_mean = numpy.mean(all_pre, axis = 0) #finds the mean of each column
-    pre_stdev = stats.sem(all_pre, axis = 0) #finds the stdev of each column
-    final_pre_data = [pre_mean, pre_stdev]
+    pre_sem = stats.sem(all_pre, axis = 0) #finds the stdev of each column
+    final_pre_data = [pre_mean, pre_sem]
     ave_data["pre"] = final_pre_data
 
     post_tuple = tuple(post)
     all_post = numpy.vstack(post_tuple)
     post_mean = numpy.mean(all_post, axis = 0) #finds the mean of each column
-    post_stdev = stats.sem(all_post, axis = 0) #finds the stdev of each column
-    final_post_data = [post_mean, post_stdev]
+    post_sem = stats.sem(all_post, axis = 0) #finds the stdev of each column
+    final_post_data = [post_mean, post_sem]
     ave_data["post"] = final_post_data
 
     for array in dual:
@@ -277,11 +298,11 @@ def get_averages(total_cells, compiled_data):
     print(dual_tuple)
     all_dual = numpy.vstack(dual_tuple)
     dual_mean = numpy.mean(all_dual, axis = 0) #finds the mean of each column
-    dual_stdev = stats.sem(all_dual, axis = 0) #finds the stdev of each column
-    final_dual_data = [dual_mean, dual_stdev]
+    dual_sem = stats.sem(all_dual, axis = 0) #finds the stdev of each column
+    final_dual_data = [dual_mean, dual_sem]
     ave_data["dual"] = final_dual_data
 
-    return all_post, ave_data
+    return ave_data
 
 
 def plot_post_ints(compiled_data, total_cells):
@@ -320,6 +341,19 @@ def plot_post_ints(compiled_data, total_cells):
 
     plt.show()
 
+def make_all_plots(data, total_cells_dict, plotting_fxn, directory, title):
+
+    for field in data:
+        expt_data = data[field]
+        print(field)
+        total_cells = total_cells_dict[field]
+        figure = plotting_fxn(expt_data, total_cells)
+        ##field is the folder name; can be title later? Need to extract
+            #maybe extract and then add to title...
+        save_to = directory + '/' + field + '/' + 'aves.pdf'
+        print(save_to)
+        plt.savefig(save_to)
+        #return figure
 
 def plot_averages(ave_data, total_cells):
 
@@ -331,15 +365,15 @@ def plot_averages(ave_data, total_cells):
 
     #pre data
     pre_aves = pre_data[0]
-    pre_stdev = pre_data[1]
+    pre_sem = pre_data[1]
 
     #dual data
     dual_aves = dual_data[0]
-    dual_stdev = dual_data[1]
+    dual_sem = dual_data[1]
 
     #post data
     post_aves = post_data[0]
-    post_stdev = post_data[1]
+    post_sem = post_data[1]
 
     print(pre_aves)
 
@@ -352,6 +386,9 @@ def plot_averages(ave_data, total_cells):
         time_pt = (i*5) + num_pre
         time_dual.append(time_pt)
 
+    #time_dual = [(i*5 + num_pre) for in range(num_duals)]
+        #List comprehension
+
     total_time = len(post_aves)
     last_dual_time = time_dual[-1]
     time_post = []
@@ -359,13 +396,17 @@ def plot_averages(ave_data, total_cells):
         time_pt = last_dual_time + i + 1
         time_post.append(time_pt)
 
+    #time_post = [(i + last_dual_time + 1) for in in range(total_time)]
+        #List comprehension
 
     print(time_pre)
     print(time_dual)
     print(time_post)
 
-    plt.errorbar(time_post, post_aves, yerr = post_stdev)
-    plt.errorbar(time_pre, pre_aves, yerr = pre_stdev)
-    plt.errorbar(time_dual, dual_aves, yerr = dual_stdev)
+    plt.errorbar(time_post, post_aves, yerr = post_sem)
+    plt.errorbar(time_pre, pre_aves, yerr = pre_sem)
+    plt.errorbar(time_dual, dual_aves, yerr = dual_sem)
 
-    plt.show()
+    #plt.show()
+
+    return fig
