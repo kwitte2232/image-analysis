@@ -229,50 +229,64 @@ def subtract_bkgrnd(compiled_data):
                 bk_sub_intensities = raw_intensities - bkgrnd
                 cell_ID[data_type] = bk_sub_intensities
             #elif data_type == "pre":
-                data = cell_data[data_type] #list of numpy arrays
-                raw_intensities = data[0] # numpy array
-                bkgrnd = data[1][0] # only the background value
-                bk_sub_intensities = raw_intensities - bkgrnd
-                cell_ID[data_type] = bk_sub_intensities
+                #data = cell_data[data_type] #list of numpy arrays
+                #raw_intensities = data[0] # numpy array
+                #bkgrnd = data[1][0] # only the background value
+                #bk_sub_intensities = raw_intensities - bkgrnd
+                #cell_ID[data_type] = bk_sub_intensities
 
     return all_cells
 
-def get_averages(compiled_data):
+def get_averages(compiled_data, bckgrnd = True):
 
     all_aves = {}
 
     for field in compiled_data:
         expt_data = compiled_data[field]
-        field_ave = get_expt_averages(expt_data)
+        field_ave = get_expt_averages(expt_data, bckgrnd)
         all_aves[field] = field_ave
 
     return all_aves
 
 
-def get_expt_averages(expt_data):
+def get_expt_averages(expt_data, bckgrnd):
 
+    print(bckgrnd)
     pre = []
     post = []
     dual = []
 
     ave_data = {}
 
-    bk_sub_data = subtract_bkgrnd(expt_data)
+    if bckgrnd:
+        bk_sub_data = subtract_bkgrnd(expt_data)
+        print("sub back")
+        for cell in bk_sub_data:
+            curr_cell_data = bk_sub_data[cell] #dictionary of pre, post, dual
+            for data_type in curr_cell_data:
+                if data_type == "pre":
+                    pre_data = curr_cell_data[data_type]
+                    pre.append(pre_data)
 
-    for cell in bk_sub_data:
-        curr_cell_data = bk_sub_data[cell] #dictionary of pre, post, dual
-        for data_type in curr_cell_data:
-            if data_type == "pre":
-                pre_data = curr_cell_data[data_type]
-                pre.append(pre_data)
+                elif data_type == "post":
+                    post_data = curr_cell_data[data_type]
+                    post.append(post_data)
 
-            elif data_type == "post":
-                post_data = curr_cell_data[data_type]
-                post.append(post_data)
-
-            elif data_type == "dual":
-                dual_data = curr_cell_data[data_type]
-                dual.append(dual_data)
+                elif data_type == "dual":
+                    dual_data = curr_cell_data[data_type]
+                    dual.append(dual_data)
+    else:
+        for cell in expt_data:
+            curr_cell_data = expt_data[cell]
+            for data_type in curr_cell_data:
+                data = curr_cell_data[data_type] #list of numpy arrays
+                intensities = data[0]
+                if data_type == "pre":
+                    pre.append(intensities)
+                elif data_type == "post":
+                    post.append(intensities)
+                elif data_type == "dual":
+                    dual.append(intensities)
 
     pre_tuple = tuple(pre)
     all_pre = numpy.vstack(pre_tuple)
@@ -292,7 +306,7 @@ def get_expt_averages(expt_data):
         length = len(array)
         if length > 12:
             dual.remove(array)
-        print("length: ", length)
+        #print("length: ", length)
 
     dual_tuple = tuple(dual)
     #print(dual_tuple)
@@ -355,7 +369,7 @@ def make_all_plots(data, total_cells_dict, plotting_fxn, directory, title):
 
         figure = plotting_fxn(expt_data, total_cells, field_title)
 
-        save_to = directory + '/' + field + '/' + exposure + '_Aves.pdf'
+        save_to = directory + '/' + field + '/' + "No_SubBack_" + exposure + '_Aves.pdf'
         #print(save_to)
         plt.savefig(save_to)
 
@@ -420,7 +434,7 @@ def plot_averages(ave_data, total_cells, title):
     plt.text(200, 110, num_cells, fontsize = 12)
 
     axes = plt.gca()
-    axes.set_ylim(0, 150)
+    axes.set_ylim(0, 500)
 
     #plt.show()
 
