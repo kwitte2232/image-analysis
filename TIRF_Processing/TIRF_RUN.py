@@ -25,13 +25,13 @@ row_names = ['Area', 'Mean', 'IntDen', 'Bkgrnd Area', 'Bkgrnd Mean', 'Bkgrnd Int
 title = 'Recruitment in Response to GFP Illumination'
 
 
-### Ask whether the Trans directory exists or not. 
+### Ask whether the Trans directory exists or not.
 #tirf.traverse_directory(directory)
 
 data = tirf.build_data(directory, row_names)
 
 total_cells_dict, compiled = tirf.compile_data(data)
 
-all_aves = tirf.get_averages(compiled)
+all_aves = tirf.get_averages(compiled, bckgrnd = False)
 
 tirf.make_all_plots(all_aves, total_cells_dict, tirf.plot_averages, directory, title)

@@ -135,7 +135,7 @@ def build_data(expt_dir, row_names):
             #'kristen_8341_349_01202016', 'Experiments', '8341', '8341_9_02_msec',
             #'processedImages', 'Cell_1', 'Trans']
 
-            print(split_dir_name)
+            #print(split_dir_name)
 
             field_name = split_dir_name[8] #'8341_9_02_msec'
             cell = split_dir_name[10] #'Cell_X'
