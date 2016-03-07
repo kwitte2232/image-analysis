@@ -15,6 +15,8 @@ def delete_files(directory, file_type):
                 print("files: ", files)
                 os.remove(dir_name + "/" + files)
 
+    return None
+
 def delete_folders(directory, gen_folder_name):
 
     for dir_name, folders, dir_files in os.walk(directory, topdown = False):
@@ -23,3 +25,5 @@ def delete_folders(directory, gen_folder_name):
                 folder_to_delete = dir_name + '/' + folder + '/'
                 print(folder_to_delete)
                 shutil.rmtree(folder_to_delete)
+
+    return None
