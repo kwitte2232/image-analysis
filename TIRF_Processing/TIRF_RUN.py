@@ -34,4 +34,4 @@ total_cells_dict, compiled = tirf.compile_data(data)
 
 all_aves = tirf.get_averages(compiled, bckgrnd = False)
 
-tirf.make_all_plots(all_aves, total_cells_dict, tirf.plot_averages, directory, title)
+#tirf.make_all_plots(all_aves, total_cells_dict, tirf.plot_averages, directory, title)

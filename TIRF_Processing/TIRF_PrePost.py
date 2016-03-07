@@ -160,6 +160,25 @@ def build_data(expt_dir, row_names):
     return all_data
 
 def compile_data(all_data):
+    '''
+    Returns a nested dictionary of dictionaries with cells as the uppermost key.
+    The inner dictionaries have pre, dual, post as keys and values as list of
+    numpy arrays of intensity measurements including the background. Essentially
+    the goal was to convert the datastructure to numpy arrays from imported
+    csvs.
+
+    Input:
+        all_data: nested dictionary, returned from build_data function
+
+    Returns:
+        total_cells_dict: dictionary with keys as a string for the field and
+        values as the total number of cells in that field
+
+        compiled_data: nested dictionary with keys as cell_tag and values
+        as dictionaries with pre, dual, post as keys and list of numpy arrays
+        for that cell's measurements
+    '''
+
 
     compiled_data = {}
     total_cells_dict = {}
@@ -213,31 +232,24 @@ def compile_data(all_data):
 
     return total_cells_dict, compiled_data
 
-def subtract_bkgrnd(compiled_data):
-
-    all_cells = {}
-    for cell in compiled_data:
-        cell_data = compiled_data[cell]
-        if cell not in all_cells:
-            all_cells[cell] = {}
-        cell_ID = all_cells[cell] # empty dict
-        for data_type in cell_data:
-            #if data_type == "post" or data_type == "dual":
-                data = cell_data[data_type] #list of numpy arrays
-                raw_intensities = data[0] # numpy array
-                bkgrnd = data[1][0] # only the background value
-                bk_sub_intensities = raw_intensities - bkgrnd
-                cell_ID[data_type] = bk_sub_intensities
-            #elif data_type == "pre":
-                #data = cell_data[data_type] #list of numpy arrays
-                #raw_intensities = data[0] # numpy array
-                #bkgrnd = data[1][0] # only the background value
-                #bk_sub_intensities = raw_intensities - bkgrnd
-                #cell_ID[data_type] = bk_sub_intensities
-
-    return all_cells
 
 def get_averages(compiled_data, bckgrnd = True):
+    '''
+    Averages the intensity measurements across time for all the cells in
+    the field.
+
+    Input:
+        compiled_data: nested dictionary, returned from compile_data function
+        bckgrnd: boolean, default set to True to subtract the background
+            intensity from the ROI. Set to False if do not want to subtract
+            the background.
+
+    Returns:
+        all_aves: nested dictionary with field as keys and dictionary as values.
+        Inner dictionary has measurement type as key and value as list of 2
+        numpy arrays, the averages across cells and the SEM.
+    '''
+
 
     all_aves = {}
 
@@ -318,12 +330,44 @@ def get_expt_averages(expt_data, bckgrnd):
 
     return ave_data
 
+def subtract_bkgrnd(compiled_data):
+    '''
+    Subtracts the background intensity measurement from the ROI intensity
+    measurements for all sub dictionary values
 
-def plot_post_ints(compiled_data, total_cells):
+    Input:
+        compiled_data: nested dictionary, returned from compile_data function
+
+    Returns:
+        all_cells: nested dictionary identical to compiled_data structure,
+        except only a single numpy array rather than two, one as intensities
+        and the other as a scalar array with only the background value
+    '''
+
+
+    all_cells = {}
+    for cell in compiled_data:
+        cell_data = compiled_data[cell]
+        if cell not in all_cells:
+            all_cells[cell] = {}
+        cell_ID = all_cells[cell] # empty dict
+        for data_type in cell_data:
+            #if data_type == "post" or data_type == "dual":
+                data = cell_data[data_type] #list of numpy arrays
+                raw_intensities = data[0] # numpy array
+                bkgrnd = data[1][0] # only the background value
+                bk_sub_intensities = raw_intensities - bkgrnd
+                cell_ID[data_type] = bk_sub_intensities
+
+    return all_cells
+
+
+def plot_post_ints(expt_data, total_cells):
+
 
     all_cells = []
     cell_names = numpy.array(total_cells)
-    for cell in compiled_data:
+    for cell in expt_data:
         print("cell ", cell)
         cell_data = compiled_data[cell]
         cell_names = numpy.append(cell_names, cell)
@@ -357,21 +401,69 @@ def plot_post_ints(compiled_data, total_cells):
 
 def make_all_plots(data, total_cells_dict, plotting_fxn, directory, title):
 
+    fig = plt.figure()
     for field in data:
         expt_data = data[field]
-        #print(field)
         total_cells = total_cells_dict[field]
 
         split_field = field.split('_')
+        print(split_field)
         exposure = split_field[2] + 'sec'
         new = exposure[0] + '.' + exposure[1:]
-        field_title = title + ' (' + new + ')'
+        print new
+        #field_title = title + ' (' + new + ')'
+        field_title = "title"
 
-        figure = plotting_fxn(expt_data, total_cells, field_title)
+        #if new == "0.059999sec" or new == "0.08sec" or new == "0.1sec" or new == '0.15sec':
+        if new == "0.15sec" or new == "0.059999sec":
+            line = plotting_fxn(expt_data, total_cells, new)
 
-        save_to = directory + '/' + field + '/' + "No_SubBack_" + exposure + '_Aves.pdf'
+        #plt.show()
+        #save_to = directory + '/' + field + '/' + "No_SubBack_" + exposure + '_Aves.pdf'
         #print(save_to)
-        plt.savefig(save_to)
+        #plt.savefig(save_to)
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Percent Change Relative to Pre Illumination ")
+    plt.legend()
+    axes = plt.gca()
+    axes.set_ylim(0, 0.25)
+    #plt.show()
+    save_to = directory + '/' + "Percent_Change_Aves.pdf"
+    print(save_to)
+    plt.savefig(save_to)
+
+def plot_ave_percent_change(ave_data, total_cells, label):
+
+    post_data = ave_data["post"] #list of 2 numpy arrays, one for aves other std
+    dual_data = ave_data["dual"] #list of 2 numpy arrays, one for aves other std
+    pre_data = ave_data["pre"] #list of 2 elements, 0th = ave, 1st = std
+
+    #pre data
+    pre_aves = pre_data[0]
+    pre_sem = pre_data[1]
+
+    #dual data
+    dual_aves = dual_data[0]
+    dual_sem = dual_data[1]
+
+    #post data
+    post_aves = post_data[0]
+    post_sem = post_data[1]
+
+    pre_combined_average = numpy.mean(pre_aves)
+
+    percent_change = numpy.subtract(numpy.divide(post_aves, pre_combined_average), (1))
+
+    total_time = len(percent_change)
+    time = []
+    for i in range(total_time):
+        time_pt = i + 1
+        time.append(time_pt)
+
+    line = plt.plot(time, percent_change, label = label)
+
+    return line
+
 
 def plot_averages(ave_data, total_cells, title):
 
