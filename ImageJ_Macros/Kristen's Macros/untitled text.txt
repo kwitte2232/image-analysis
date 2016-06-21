@@ -1,6 +1,0 @@
-James Ferrell
-
--Trigger waves in cdk1 activation to propagate active cdk1 molecules very quickly throughout the cell
-	- propagation speed proportional to diffusion speed
-	- Akin to action potentials and calcium waves
-- Could be a general mechanism for communication over large distance scales
