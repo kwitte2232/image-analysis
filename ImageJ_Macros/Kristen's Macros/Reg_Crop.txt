@@ -1,0 +1,143 @@
+//Setup folders
+// 
+// waitForUser("Choose a directory containing the image stacks to be processed.\n \nThe directory should contain only image stacks to be processed.");
+// 
+// dir=getDirectory("Choose a directory");
+// print(dir);
+// 
+// list=getFileList();
+// 
+// procDir=dir+"/processedImages/";
+// procAreaDir=dir+"/processedImages/processedAreas/";
+// File.makeDirectory(procDir);
+// File.makeDirectory(procAreaDir);
+// 
+// dirLength = lengthOf(dir);
+// shortDir = substring(dir, 0, dirLength-1)
+// slashIndex = lastIndexOf(shortDir, "/");
+// prefix = substring(shortDir, slashIndex+1);
+// topDir = substring(shortDir, 0, slashIndex+1);
+
+
+
+setBatchMode(true);
+waitForUser("Choose the directory of the images to be processed");
+folder = getDirectory("Choose a directory");
+	
+proc=folder+"Processed_Images"+File.separator;
+File.makeDirectory(proc);
+	if (!File.exists(proc)) {
+      exit("Unable to create directory");
+	}
+
+// procAreaDir=dir+"/Processed_Images/processedAreas/";
+// File.makeDirectory(procDir);
+// File.makeDirectory(procAreaDir);
+
+
+
+
+//waitForUser("Select ZMAX_GFP");
+gfpstack=folder+"ZMax_GFP"+File.separator;
+run("Image Sequence...", "open=gfpstack number=121 starting=1 increment=1 scale=100 file=[] or=[] sort");
+run("Duplicate...", "title=GFP_Duplicate duplicate range=1-121");
+run("Size...", "width=512 height=512 depth=121 constrain average interpolation=Bilinear");
+runMacro("BleachCorrection.txt");
+
+//waitForUser("Select ZMAX_dsRED");
+dsREDstack=folder+"ZMax_dsRED"+File.separator;
+run("Image Sequence...", "open=dsREDstack number=121 starting=1 increment=1 scale=100 file=[] or=[] sort");
+run("Duplicate...", "title=dsRED_Duplicate duplicate range=1-121");
+runMacro("BleachCorrection.txt");
+
+run("Merge Channels...", "c1=dsRED_Duplicate c2=GFP_Duplicate create keep");
+waitForUser("Adjust brightness levels. \n \n Click OK when finished.");
+run("Stack to RGB", "slices");
+selectWindow("Composite-1");
+run("8-bit");
+run("MultiStackReg", "stack_1=Composite-1 action_1=Align file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");
+title="MultiStack_Merge";
+saveAs("Tiff", proc+title);
+selectWindow("GFP_Duplicate");
+run("MultiStackReg", "stack_1=GFP_Duplicate action_1=[Load Transformation File] file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+title="GFP";
+saveAs("Tiff", proc+title);
+selectWindow("dsRED_Duplicate");
+run("MultiStackReg", "stack_1=dsRED_Duplicate action_1=[Load Transformation File] file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+title="dsRED";
+saveAs("Tiff", proc+title);
+
+run("Merge Channels...", "c1=dsRED.tif c2=GFP.tif create keep");
+waitForUser("Adjust brightness levels. \n \n Click OK when finished.");
+run("Stack to RGB", "slices");
+title="Merge";
+saveAs("Tiff", proc+title);
+
+
+
+
+
+// CROP CELLS
+
+// cropCells = getBoolean("Would you like to crop any fields in this directory?");
+// 
+// if (cropCells) {
+// 	for (i=0; i<list.length; i++)	{
+// 		
+// 		nextStack = list[i];
+// 		open(dir+nextStack);
+// 		
+// 		//setBatchMode(true);
+// 		
+// 		name=replace(getTitle(), ".tif", "");
+// 		setLocation(750, 200);
+// 		setSlice(1);	
+// 		run("Duplicate...", "title=temp");
+// 		run("Enhance Contrast", "saturated=0.5");
+// 		run("8-bit");
+// 		rename(name+"_thumb.tif");	
+// 		//setBatchMode(false);
+// 		setLocation(50, 50);
+// 		
+// 		selectWindow(name+".tif");
+// 		run("Enhance Contrast", "saturated=0.5");
+// 		cropThis = getBoolean("Would you like to crop any cells in this stack?");
+// 		
+// 		if (cropThis)	{
+// 			numCrops=0;
+// 			
+// 			do	{
+// 				selectWindow(name+"_thumb.tif");
+// 				if (numCrops==0)	{
+// 					makeRectangle(1, 1, 75, 75);
+// 				}
+// 				waitForUser("Move or resize the ROI and click OK.");
+// 				numCrops++;
+// 				run("Colors...", "foreground=white background=white selection=yellow");
+// 				run("Draw");
+// 				getSelectionBounds(x, y, width, height);
+// 				xText=x+2;
+// 				yText=y+15;
+// 				setColor(255,255,255);
+// 				setFont("SansSerif" , 12, "antialiased");
+// 				drawString(numCrops, xText, yText);
+// 				saveAs("Tiff", dir+name+"_thumb.tif");
+// 				
+// 				selectWindow(name+".tif");
+// 				run("Restore Selection");
+// 				run("Duplicate...", "title=temp duplicate");
+// 				if (numCrops <= 9)
+// 					saveAs("Tiff", procDir+name+"_crop0"+numCrops+".tif");
+// 				else
+// 					saveAs("Tiff", procDir+name+"_crop"+numCrops+".tif");
+// 				close();
+// 				
+// 				anotherCrop=getBoolean("Would you like to crop another cell in this stack?");
+// 			}	while (anotherCrop);
+// 			
+// 			closeAllImages();
+// 		}
+// 	}
+// }
+// 
+// // END CROP CELLS

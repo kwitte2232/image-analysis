@@ -1,0 +1,277 @@
+waitForUser("Choose a directory containing the image stacks to be processed.\n \nThe directory should contain only image stacks to be processed.");
+
+dir=getDirectory("Choose a directory");
+print(dir);
+
+list=getFileList(dir);
+
+procDir=dir+"/processedImages/";
+procAreaDir=dir+"/processedImages/processedAreas/";
+File.makeDirectory(procDir);
+File.makeDirectory(procAreaDir);
+
+dirLength = lengthOf(dir);
+shortDir = substring(dir, 0, dirLength-1)
+slashIndex = lastIndexOf(shortDir, "/");
+prefix = substring(shortDir, slashIndex+1);
+topDir = substring(shortDir, 0, slashIndex+1);
+
+// CROP CELLS
+
+cropCells = getBoolean("Would you like to crop any fields in this directory?");
+
+if (cropCells) {
+	for (i=0; i<list.length; i++)	{
+		
+		nextStack = list[i];
+		open(dir+nextStack);
+		
+		//setBatchMode(true);
+		
+		name=replace(getTitle(), ".tif", "");
+		setLocation(750, 200);
+		setSlice(2);	
+		run("Duplicate...", "title=temp");
+		run("Enhance Contrast", "saturated=0.5");
+		run("8-bit");
+		rename(name+"_thumb.tif");	
+		//setBatchMode(false);
+		setLocation(50, 50);
+		
+		selectWindow(name+".tif");
+		run("Enhance Contrast", "saturated=0.5");
+		cropThis = getBoolean("Would you like to crop any cells in this stack?");
+		
+		if (cropThis)	{
+			numCrops=0;
+			
+			do	{
+				selectWindow(name+"_thumb.tif");
+				if (numCrops==0)	{
+					makeRectangle(1, 1, 75, 75);
+				}
+				waitForUser("Move or resize the ROI and click OK.");
+				numCrops++;
+				run("Colors...", "foreground=white background=white selection=yellow");
+				run("Draw");
+				getSelectionBounds(x, y, width, height);
+				xText=x+2;
+				yText=y+15;
+				setColor(255,255,255);
+				setFont("SansSerif" , 12, "antialiased");
+				drawString(numCrops, xText, yText);
+				saveAs("Tiff", dir+name+"_thumb.tif");
+				
+				selectWindow(name+".tif");
+				run("Restore Selection");
+				run("Duplicate...", "title=temp duplicate");
+				if (numCrops <= 9)
+					saveAs("Tiff", procDir+name+"_crop0"+numCrops+".tif");
+				else
+					saveAs("Tiff", procDir+name+"_crop"+numCrops+".tif");
+				close();
+				
+				anotherCrop=getBoolean("Would you like to crop another cell in this stack?");
+			}	while (anotherCrop);
+			
+			closeAllImages();
+		}
+	}
+}
+
+// END CROP CELLS
+
+
+// CREATE ROIS
+
+makeROIs = getBoolean("Would you like to create ROIs from the cropped cells in this directory?");
+
+if (makeROIs) {
+
+	setOption("DisableUndo", true);
+	list=getFileList(procDir);
+	print("Images discarded:");
+	
+	for (i=0; i<list.length; i++)	{
+		if (endsWith(list[i], ".tif"))	{
+			roiManager("Reset");
+			//setBatchMode(true);
+			nextStack = list[i];
+			open(procDir+nextStack);
+			setLocation(100, 100);
+			run("In");
+			run("In");
+			run("In");
+			run("In");
+			name=replace(getTitle(), ".tif", "");
+			
+			setSlice(2);
+			run("Enhance Contrast", "saturated=0.5");
+			
+			//	waitForUser("Click OK to proceed.");	// Debugging
+			
+		
+			selectWindow(name+".tif");
+			run("Select None");
+			setSlice(2);
+			setAutoThreshold("Li");
+			run("Threshold...");
+			run("Create Selection");
+			resetThreshold();
+			
+			//	waitForUser("Click OK to proceed.");	// Debugging
+			
+			selectWindow(name+".tif");
+			run("Make Inverse");
+			run("Enlarge...", "enlarge=1");
+			run("Enlarge...", "enlarge=-1");
+			roiManager("Add");
+			count=roiManager("count");
+			roiManager("Select", count-1);
+			type = selectionType();
+			if (type == 9)	{
+				roiManager("Split");
+				count=roiManager("count");
+				while (count > 1)	{
+					roiManager("Select", 0);
+					roiManager("Delete");
+					count=roiManager("count");
+				}
+			}
+			count=roiManager("count");
+			roiManager("Select", count-1);
+			roiManager("Rename", "wholeCell");
+			
+			//	waitForUser("Click OK to proceed.");	// Debugging
+			
+			pixOffset=3;
+			pixOffset=-pixOffset;
+			run("Enlarge...", "enlarge="+pixOffset);
+			roiManager("Add");
+			count=roiManager("count");
+			roiManager("Select", count-1);
+			roiManager("Rename", "bigCplasm");
+			
+			//	waitForUser("Click OK to proceed.");	// Debugging
+			
+			selectWindow(name+".tif");
+			roiManager("Select", count-1);
+			run("Make Band...", "band=3");
+			roiManager("Add");
+			count=roiManager("count");
+			roiManager("Select", count-1);
+			roiManager("Rename", "PM");
+			resetThreshold();
+			
+			//	waitForUser("Click OK to proceed.");	// Debugging
+			
+			selectWindow(name+".tif");
+			width=getWidth();
+			height=getHeight();
+			makeOval(0, 0, width, height);
+			run("Make Inverse");
+			roiManager("Add");
+			count=roiManager("count");
+			roiManager("Select", count-1);
+			roiManager("Rename", "bkgrnd");
+			
+			//setBatchMode("exit and display");
+			selectWindow(name+".tif");
+			roiManager("Select", count-2);
+			
+			saveThis = getBoolean("Save for further processing?");
+			if (saveThis)	{
+				roiManager("Save", procAreaDir+name+"_ROIs.zip");
+			}
+			else	{
+				print(name);
+				selectWindow("Log");
+				save(procDir+"discards.txt");
+			}
+			
+			selectWindow(name+".tif");
+			run("Close");
+			roiManager("Reset");
+		}
+	}
+	
+	selectWindow("Log");
+	run("Close");
+}
+
+// END CREATE ROIS
+
+
+// PROCESS ROIS
+
+procROIs = getBoolean("Would you like to process the ROIs in this directory?");
+
+if (procROIs) {
+
+	setBatchMode(true);
+	sliceNames=newArray("nom", "gfp");
+	numToSubtract=newArray(5, 3, 2);
+	areaNames=newArray("PM");
+	
+	list=getFileList(procAreaDir);
+	for (i=0; i<list.length; i++) {
+		roiManager("Reset");
+		name=replace(list[i], "_ROIs.zip", "");
+		open(procDir+name+".tif");
+		width=getWidth();
+		height=getHeight();
+		depth=nSlices;
+		roiManager("Open", procAreaDir+name+"_ROIs.zip");
+		count=roiManager("count");
+		setSlice(2);
+		roiManager("Select", count-1); //background
+		getRawStatistics(nPix, mean, min, max, std, hist);
+		median=getMedian(hist, nPix);
+		run("Select None");
+		run("Subtract...", "value="+median+" slice");
+		//IJ.log("median="+median);
+		saveAs("Tiff", procAreaDir+name+"_BGSubt.tif");
+		
+		// waitForUser("Click OK to proceed.");	// Debugging
+				
+		setResult("Label", i, prefix+"_"+name);
+		roiManager("Select", count-4); //wholecell
+		setSlice(2);
+		getStatistics(area, mean, min, max, std);
+		setResult("Area", i, area);
+		roiManager("Select", count-2); //PM
+		setSlice(2);
+		getStatistics(area, mean, min, max, std);
+		setResult("PM", i, mean);
+		updateResults();
+		saveAs("measurements", topDir+prefix+"_areas.xls");
+	}
+	
+	selectWindow("Results");
+	run("Close");
+	closeAllImages();
+}
+
+// END PROCESS ROIS
+
+
+
+// FUNCTIONS
+
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close(); 
+	}
+}
+
+
+function getMedian(hist, nPix) {
+  sum = 0;
+  i = -1;
+  nPix2 = nPix/2;
+  do {
+	  sum += hist[++i];
+  } while (sum<=nPix2);
+  return i;
+}

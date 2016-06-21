@@ -1,0 +1,137 @@
+dir=getDirectory("Choose a Directory");
+IJ.log(dir);
+traces=getFileList(dir);
+IJ.log(traces.length);
+cellNumber=newArray(2);
+
+for (k=0; k<cellNumber.length; k++) {	
+			cellNumber[k]=k;
+
+	for (i=0; i<traces.length; i++) {
+		string=File.openAsString(dir + traces[i]);
+		IJ.log(dir + traces[i]);
+		rows=split(string, "\n");
+		IJ.log(rows.length);
+		xcoord=newArray(rows.length);
+		//ycoord=newArray(rows.length);
+	
+		for(j=0; j<rows.length; j++){
+			column=split(rows[j], "\t");
+			IJ.log(columns.length);
+			
+			if (column[0]==k) {
+				String.append(column[2] + "\n");
+				parseFloat(String.buffer);
+			
+			}
+		}
+		xcoord[i]=substring(String.buffer, 0, lengthOf(String.buffer));
+		IJ.log("\n" + "xcoord" + "\n" + xcoord[i] + "\n");
+	}	
+// xcoord[i]=substring(String.buffer, 0, lengthOf(String.buffer));
+// IJ.log("\n" + "xcoord" + xcoord[i] + "\n");
+//String.resetBuffer;
+	
+	//String.append("\r");
+	for (i=0; i<traces.length; i++) {
+		string=File.openAsString(dir + traces[i]);
+		IJ.log(dir + traces[i]);
+		rows=split(string, "\n");
+		IJ.log(rows.length);
+		//xcoord=newArray(rows.length);
+		ycoord=newArray(rows.length);
+	
+		for(j=0; j<rows.length; j++){
+			column=split(rows[j], "\t");
+			
+			if (column[0]==k) {
+				String.append(column[3] + "\n");
+				parseFloat(String.buffer);
+			}
+		}
+		ycoord[i]=substring(String.buffer, 0 , lengthOf(String.buffer));
+		IJ.log("\n" + "ycoord" + "\n" + ycoord[i] + "\n");
+	}
+// ycoord[i]=substring(String.buffer, 0, lengthOf(String.buffer));
+// IJ.log("\n" + "ycoord" + ycoord[i] + "\n");
+//String.resetBuffer;
+IJ.log("\n" + "xcoord" + "\n" + xcoord[i] + "\n");
+IJ.log("\n" + "ycoord" + "\n" + ycoord[i] + "\n");
+//makeSelection("polyline", xcoord, ycoord);
+//roiManager("Add");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// dir=getDirectory("Choose a Directory");
+// //pathfile=File.openDialog("Choose the file to Open:"); 
+// //filestring=File.openAsString(pathfile); 
+// rows=File.openAsString(dir+"CurrentSnake.txt"); 
+// j=rows.length;
+// 	
+// x=newArray(j); 
+// 	// makes a new array of the row length, i.e. how many columns are in the row
+// 
+// y=newArray(j);
+// 	// makes a new array of the row length, i.e. how many columns are in the row
+//  
+// for(i=0; i<j; i++){ 
+// 	// For loop: i = what row to start reading; i<rows.length = one less than row length;
+// 	// i++ = add one after every i (i = 0, i + 1 = 1, etc)
+// 	columns=split(rows[i],"\t");
+// 		// converts a[0] = w1 \t w2 to
+// 		// b[0] = w1
+// 		// b[1] = w2
+// 	 
+// 	x[i]=(columns[2]); 
+// 		// x is an array defined by the string of column 2
+// 		IJ.log(x[i]);
+// 	y[i]=(columns[3]); 
+// 		// y is an array defined by the string of column 3
+// 	
+// } 
+// 
+// IJ.log(x[i]);
+// IJ.log(y[i]);
+// 
+// 
+// //strx=x;
+// 
+// //String.append(x[i-1]);
+// 
+// //String.append(y[i-1]);
+// 
+// //String.copy(String.buffer);
+// 
+// //String.buffer;
+// 
+// 
+// //String.paste
+// 
+// //String.paste(y[i-1]);
+// //while (i<rows.length)	{
+// 	// do something
+// //}
+// 
+// //do 	{
+// 
+// //}
+// //while  (i<rows.length);

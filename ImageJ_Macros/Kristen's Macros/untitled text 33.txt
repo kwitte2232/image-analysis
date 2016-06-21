@@ -1,0 +1,48 @@
+// selectWindow("Centers.tif");
+// frames=nSlices();
+// run("Duplicate...", "title=Duplicate_Centers duplicate range=1-frames");
+// run("In");
+// run("In");
+selectWindow("Kymo_HM.tif");
+frames=nSlices();
+run("Duplicate...", "title=Duplicate_Kymo duplicate range=1-frames");
+run("In");
+run("In");
+run("Gaussian Blur...", "sigma=2 stack");
+
+for(i=1; i<=frames; i++){
+	selectWindow("Duplicate_Kymo");
+	setSlice(i);
+	makeLine(0,0,0,400,10);
+	//IJ.log("Slice_"+i+"\n\n");
+	targets=getBoolean("Would you like to place the line along bud emergence?"); 
+	if (targets) {
+		numTargets=0;
+		do {
+			//waitForUser("Draw a segmented line along the targets.");
+			waitForUser("Place the line in register with bud emergence");
+			numTargets++;
+			//selectWindow("Duplicate_Kymo");
+			//setSlice(i);
+			//run("Restore Selection");
+			selectWindow("Duplicate_Kymo");
+			List.setMeasurements;
+			xCoord=List.getValue("X");
+			//IJ.log("XCoord_Target_"+numTargets+"\t="+xCoord+"\n");
+			//yCoord=List.getValue("Y");
+			profile=getProfile();
+			for (k=0; k<profile.length; k++) {
+				intensity=profile[k];
+				//IJ.log("Intensity="+intensity);
+				//setResult("Pixel_YCoord", k, k);
+				setResult("GFP_Plot Profile_"+i+"_"+numTargets, k, intensity);
+			}
+			anotherTarget=getBoolean("hit no");
+		}	while (anotherTarget);
+	}
+}
+		
+		
+		
+		
+

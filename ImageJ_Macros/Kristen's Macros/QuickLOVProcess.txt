@@ -1,0 +1,71 @@
+// FUNCTIONS
+
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close(); 
+	}
+}
+
+
+//Setup folders
+setBatchMode(true);
+waitForUser("Choose the directory of the images to be processed");
+folder = getDirectory("Choose a directory");
+
+list=getFileList(folder);
+
+proc=folder+"Processed_Images"+File.separator;
+File.makeDirectory(proc);
+	if (!File.exists(proc)) {
+      exit("Unable to create directory");
+	}
+	
+stack=folder+"Stack"+File.separator;
+File.makeDirectory(stack);
+	if (!File.exists(stack)) {
+      exit("Unable to create directory");
+	}
+
+for (i=0; i<list.length; i++)	{
+	image=list[i];
+	open(folder+image);
+	run("Duplicate...", "title=Duplicate duplicate range=1-6");
+	run("Stack to Images");
+	selectWindow("Duplicate-0004");
+	//rename("GFP");
+	title="GFP";
+	saveAs("Tiff", proc+title);
+	imageCalculator("Average create", "Duplicate-0002","Duplicate-0003");
+	title="Ave_mCh_Pre";
+	List.setMeasurements;
+	print(List.getList);
+	min=List.getValue("Min");
+	max=List.getValue("Max");
+	saveAs("Tiff", proc+title);
+	imageCalculator("Average create", "Duplicate-0005","Duplicate-0006");
+	title="Ave_mCh_Post";
+	setMinAndMax(min,max);
+	saveAs("Tiff", proc+title);
+	imageCalculator("Subtract create 32-bit", "Ave_mCh_Post.tif","Ave_mCh_Pre.tif");
+	selectWindow("Result of Ave_mCh_Post.tif");
+	title="Subtract_mCh_Gray";
+	saveAs("Tiff", proc+title);
+	// selectWindow("Subtract_mCh_Gray.tif");
+// 	run("unionjack");
+// 	run("Invert LUT");
+// 	run("Flatten");
+// 	title="Subtract_mCh_UJ";
+// 	saveAs("Tiff", proc+title);
+	closeAllImages();
+	}
+
+	open(proc+"GFP.tif");
+	open(proc+"Ave_mCh_Pre.tif");
+	open(proc+"Ave_mCh_Post.tif");
+	run("Images to Stack", "name=Stack title=[] use");
+	title="Stack";
+	saveAs("Tiff", stack+title);
+
+
+setBatchMode(false);

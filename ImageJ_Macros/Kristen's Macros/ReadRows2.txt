@@ -1,0 +1,77 @@
+
+
+dir=getDirectory("Choose a Directory");
+//IJ.log(dir);
+traces=getFileList(dir);
+selectWindow("Duplicate");
+f=nSlices();
+//IJ.log("#frames=" + f);
+//f for frame
+cellNumber=newArray(f+1);
+numRows=0;
+
+for (n=1; n<=f; n++) {
+	setSlice(n);
+	cellNumber[n]=n;
+	//IJ.log("n=" + n);
+			
+		for (i=0; i<traces.length; i++) {
+			//IJ.log("traces=" + traces.length);
+			string=File.openAsString(dir + traces[i]);
+			rows=split(string, "\n");
+			//IJ.log("#rows=" + rows.length);
+			counter=0;
+		
+			for(j=0; j<rows.length; j++){
+				column=split(rows[j], "\t");
+			
+				if (column[0]==n) {
+					counter++;		
+				}
+			}
+			//IJ.log("numRows=" + numRows);
+			//IJ.log("counter=" + counter);
+			x=newArray(rows.length);
+			y=newArray(rows.length);
+		
+			for(j=numRows; j<rows.length; j++){
+				column=split(rows[j], "\t");
+				xcoord=newArray(counter);
+				ycoord=newArray(counter);
+				
+				if (column[0]==n) { 
+					x[j]=parseFloat(column[2]);
+					y[j]=parseFloat(column[3]);
+					numRows++;
+ 				}
+ 				
+ 				if (n>1) {
+ 					start=numRows-counter;
+ 				} else {
+ 					start=0;
+ 				}
+ 				//IJ.log("start=" + start);
+ 				xcoord=Array.slice(x, start, numRows);
+ 				ycoord=Array.slice(y, start, numRows);
+ 			}
+ 		// Array.print(x);
+//  		Array.print(y);
+//  		Array.print(xcoord);
+//  		Array.print(ycoord);
+ 		makeSelection("polyline", xcoord, ycoord);
+ 		roiManager("Add");
+		if (n==1) {
+			title="Montage";
+		} else {
+			title="NextRow";
+		}
+		run("Interpolate", "interval=1");
+		run("Straighten...", "line=6");
+		rename(title);
+			if (title=="NextRow") {
+				run("Combine...", "stack1=Montage stack2=NextRow combine");
+			}
+		rename("Montage");
+		selectWindow("Duplicate");
+ 		}
+ }

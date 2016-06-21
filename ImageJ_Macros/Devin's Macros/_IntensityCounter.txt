@@ -1,0 +1,113 @@
+Dialog.create("Set Image Magnification");
+Dialog.addChoice("Objective:", newArray("20X", "40X", "63X"));
+Dialog.show();
+
+mag = Dialog.getChoice();
+if (mag == "20X") {
+	diameter = 12;
+	zoom = 140;
+}
+if (mag == "40X") {
+	diameter = 24;
+	zoom = 70;
+}
+if (mag == "63X") {
+	diameter = 24;
+	zoom = 70;
+}
+
+radius = diameter / 2;
+lastProcDir = "nothing";
+roiManager("Reset");
+
+do	{
+	setBatchMode(false);
+	closeAllImages();
+	open();
+	setLocation(50, 0);
+	run("Set... ", "zoom=" + zoom);
+	setSlice(1);
+	dir=getDirectory("image");
+	name=replace(getTitle(), ".tif", "");
+	procDir=dir+"processedImages/";
+	File.makeDirectory(procDir);
+	
+	if (!File.exists(procDir + name + "_ROIs.txt")) {
+		setTool("multipoint");
+		
+		waitForUser("Place a point ROI at the center of each cell you would like to count.\n Then add the  ROI to the manager and click OK.");
+		
+		count=roiManager("count");
+		while (count != 1)	{
+			waitForUser("Add the  ROI to the manager and click OK.");
+			count=roiManager("count");
+		}
+		
+		roiManager("Select", 0);
+		saveAs("XY Coordinates", procDir + name + "_ROIs.txt");
+		roiManager("Reset");
+	}
+		
+	setBatchMode(true);
+
+	run("Text Image... ", "open=" + procDir + name + "_ROIs.txt");
+	rename("coords");
+	
+	cellCt = getHeight();
+	for (i=0; i<cellCt; i++) {
+		cenX = getPixel(0,i);
+		startX = cenX - radius;
+		cenY = getPixel(1,i);
+		startY = cenY - radius;
+		makeOval(startX, startY, diameter, diameter);
+		roiManager("Add");
+	}
+	roiManager("Save", procDir + name + "_ROIs.zip");
+		
+	
+	if (lastProcDir != "nothing" && lastProcDir != procDir) {
+		selectWindow("Results");
+		run("Close");
+	}
+	
+	setTool("oval");
+	waitForUser("Specify an ROI to use for background subtraction and click OK.");
+	
+	selectWindow(name + ".tif");
+	setSlice(2);
+	getRawStatistics(nPix, mean);
+	redBkgd = mean;
+// 	setSlice(3);
+// 	getRawStatistics(nPix, mean);
+// 	grnBkgd = mean;
+	
+	count=roiManager("count");
+	selectWindow(name + ".tif");
+	setSlice(2);	
+	for (i=0; i<count; i++)	{
+		roiManager("Select", i);
+		getRawStatistics(nPix, mean);
+		setResult(name + "_red", i, mean - redBkgd);
+		updateResults();
+	}
+// 	setSlice(3);	
+// 	for (i=0; i<count; i++)	{
+// 		roiManager("Select", i);
+// 		getRawStatistics(nPix, mean);
+// 		setResult(name + "_grn", i, mean - grnBkgd);
+// 		updateResults();
+// 	}
+	
+	saveAs("measurements", procDir+"intensity.xls");
+	lastProcDir = procDir;
+	roiManager("Reset");
+	anotherFrame=getBoolean("Would you like to analyze another field?");
+	
+} while (anotherFrame);
+
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close(); 
+	}
+}

@@ -1,0 +1,37 @@
+waitForUser("Choose the directory of the current experiment");
+dir=getDirectory("Choose a directory");
+//rgnDir=dir+"RegionImages"+File.separator;
+//File.makeDirectory(imgDir);
+  //if (!File.exists(imgDir))
+      //exit("Unable to create directory");
+rgn=dir+"Regions01"+File.separator;
+list=getFileList(rgn);
+
+newImage("Untitled", "8-bit Black", 512, 512, 99);
+selectWindow("Untitled");
+frames=nSlices();
+
+
+for (n=1; n<=frames; n++) {
+    roiManager("Reset");
+	setSlice(n);
+    title=n;
+    //run("Duplicate...", "title=Duplicate");
+    //selectWindow("Duplicate");
+    i=n-1;
+    region=list[i];
+   	run("Metamorph ROI", "open=["+rgn+region+"]");
+    count=roiManager("count");
+    //waitForUser("Debugging");
+    for (j=0; j<count; j++) {
+        roiManager("Select", j);
+		//run("Add Selection...");
+		List.setMeasurements;
+		centerX=List.getValue("X");
+		centerY=List.getValue("Y");
+		pixel=getPixel(centerX, centerY);
+		makeOval(centerX,centerY,5,5);
+		run("Add Selection...");
+	}
+	selectWindow("Untitled");
+}

@@ -1,0 +1,73 @@
+// FW@HM Measurement
+
+// FUNCTIONS
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+waitForUser("Choose the current cell folder");
+dir=getDirectory("Choose a Directory");
+
+cropDir = dir + "/Cropped/";
+File.makeDirectory(cropDir);
+
+gfpDir = dir + "GFP_Straight_Snakes"+File.separator;
+rfpDir = dir + "dsRED_Straight_Snakes"+File.separator;
+
+gfpList = getFileList(gfpDir);
+rfpList = getFileList(rfpDir);
+// These are the same length
+
+open(dir + "Bud_Montage.tif");
+run("Duplicate...", "title=Bud_Duplicate");
+setAutoThreshold("Default dark");
+run("Threshold...");
+run("Create Selection");
+resetThreshold();
+selectWindow("Bud_Duplicate");
+List.setMeasurements;
+bePos = List.getValue("X");
+beY = List.getValue("Y");
+
+left = bePos - 15;
+beTime = beY/6;
+IJ.log(beTime);
+beTime = parseInt(beTime);
+
+IJ.log(beTime);
+waitForUser("Debugging");
+start = beTime - 40;
+end = beTime + 15;
+
+setBatchMode(true);
+for (i=start-1; i < end-1; i++) {
+  num = i + 1;
+  subCrop = cropDir + "/Cropped_"+num+"/";
+  File.makeDirectory(subCrop);
+  open(rfpDir + rfpList[i]);
+  run("Duplicate...", "title=mCherry_Duplicate");
+  selectWindow("mCherry_Duplicate");
+  makeRectangle(left,0,30,6);
+  run("Crop");
+  makeLine(0, 3, 30, 3, 6);
+  profile = getProfile();
+  for (j=0; j<profile.length; j++) {
+      setResult("Value", j, profile[j]);
+  }
+  updateResults();
+  saveAs("measurements", subCrop+"Plot_"+num+".csv");
+  selectWindow("mCherry_Duplicate");
+  if (num < 10) {
+    saveAs("Tiff", subCrop+"Crop_mCherry_0"+num+".tif");
+  } else {
+    saveAs("Tiff", subCrop+"Crop_mCherry_"+num+".tif");
+  }
+  run("Clear Results");
+  closeAllImages();
+}
+
+setBatchMode(false);

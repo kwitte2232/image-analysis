@@ -1,0 +1,206 @@
+//Setup folders
+setBatchMode(true);
+waitForUser("Choose the directory of the images to be processed");
+folder = getDirectory("Choose a directory");
+gfpDir = folder+"GFP_Rename"+File.separator;
+File.makeDirectory(gfpDir);
+	if (!File.exists(gfpDir)) {
+      exit("Unable to create directory");
+	}
+
+dsredDir = folder+"dsRED_Rename"+File.separator;
+File.makeDirectory(dsredDir);
+	if (!File.exists(dsredDir)) {
+      exit("Unable to create directory");
+	}
+
+zGFPDir = folder+"ZMax_GFP"+File.separator;
+File.makeDirectory(zGFPDir);
+	if (!File.exists(zGFPDir)) {
+      exit("Unable to create directory");
+	}
+	
+zdsredDir = folder+"ZMax_dsRED"+File.separator;
+File.makeDirectory(zdsredDir);
+	if (!File.exists(zdsredDir)) {
+      exit("Unable to create directory");
+	}
+	
+proc=folder+"Processed_Images"+File.separator;
+File.makeDirectory(proc);
+	if (!File.exists(proc)) {
+      exit("Unable to create directory");
+	}
+
+
+//Rename GFP Images
+
+waitForUser("Choose directory of GFP images to rename");
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+ 
+for (i=0; i<list.length; i++)	{
+	number=i+1;
+	title="GFP_000" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", gfpDir+title);
+	close();	
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+dirLength = lengthOf(dir);
+number=9;
+ 
+for (i=0; i<list.length; i++)	{
+	number++;
+	title="GFP_00" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", gfpDir+title);
+	close();	
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+number=99;
+ 
+for (i=0; i<list.length; i++)	{
+	number++;
+	title="GFP_0" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", gfpDir+title);
+	close();	
+}
+
+//Rename dsRED images
+
+waitForUser("Choose directory of dsRED/mCherry images to rename");
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+number=0;
+ 
+for (i=0; i<list.length; i++)	{
+	number=i+1;
+	title="dsRED_000" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", dsredDir+title);
+	close();	
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+number=9;
+ 
+for (i=0; i<list.length; i++)	{
+	number++;
+	title="dsRED_00" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", dsredDir+title);
+	close();	
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+number=99;
+ 
+for (i=0; i<list.length; i++)	{
+	number++;
+	title="dsRED_0" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", dsredDir+title);
+	close();	
+}
+
+//Zproject the Renamed GFP images
+
+list=getFileList(gfpDir);
+Array.print(list);
+
+for (i=0; i<list.length; i++){	
+	nextStack=list[i];
+	open(gfpDir+nextStack);
+	run("Z Project...", "start=1 stop=3 projection=[Max Intensity]");
+	title=getTitle();
+	saveAs("Tiff", zGFPDir+title);
+	close();
+	selectWindow(nextStack);
+	close();
+}
+
+//Zproject the Renamed GFP images
+
+list=getFileList(dsredDir);
+Array.print(list);
+ 
+for (i=0; i<list.length; i++){	
+	nextStack=list[i];
+	open(dsredDir+nextStack);
+	run("Z Project...", "start=1 stop=3 projection=[Max Intensity]");
+	title=getTitle();
+	saveAs("Tiff", zdsredDir+title);
+	close();
+	selectWindow(nextStack);
+	close();
+}
+
+
+//waitForUser("Select ZMAX_GFP");
+gfpstack=folder+"ZMax_GFP"+File.separator;
+run("Image Sequence...", "open=gfpstack number=121 starting=1 increment=1 scale=100 file=[] or=[] sort");
+run("Duplicate...", "title=GFP_Duplicate duplicate range=1-121");
+runMacro("BleachCorrection.txt");
+
+//waitForUser("Select ZMAX_dsRED");
+dsREDstack=folder+"ZMax_dsRED"+File.separator;
+run("Image Sequence...", "open=dsREDstack number=121 starting=1 increment=1 scale=100 file=[] or=[] sort");
+run("Duplicate...", "title=dsRED_Duplicate duplicate range=1-121");
+runMacro("BleachCorrection.txt");
+
+run("Merge Channels...", "c1=dsRED_Duplicate c2=GFP_Duplicate create keep");
+waitForUser("Adjust brightness levels. \n \n Click OK when finished.");
+run("Stack to RGB", "slices");
+selectWindow("Composite");
+run("8-bit");
+run("MultiStackReg", "stack_1=Composite action_1=Align file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");
+title="MultiStack_Merge";
+saveAs("Tiff", proc+title);
+selectWindow("GFP_Duplicate");
+run("MultiStackReg", "stack_1=GFP_Duplicate action_1=[Load Transformation File] file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+title="GFP";
+saveAs("Tiff", proc+title);
+selectWindow("dsRED_Duplicate");
+run("MultiStackReg", "stack_1=dsRED_Duplicate action_1=[Load Transformation File] file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+title="dsRED";
+saveAs("Tiff", proc+title);
+
+run("Merge Channels...", "c1=dsRED.tif c2=GFP.tif create keep");
+waitForUser("Adjust brightness levels. \n \n Click OK when finished.");
+run("Stack to RGB", "slices");
+title="Merge";
+saveAs("Tiff", proc+title);
+
+

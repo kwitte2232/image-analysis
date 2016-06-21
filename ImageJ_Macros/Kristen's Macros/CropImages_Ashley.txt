@@ -1,0 +1,46 @@
+//cd "`osascript -e "tell application \\"Finder\\" to get POSIX path of (insertion location as text)"`"
+//cat snakes.txt|tail -n +12 > snakes2.txt
+
+//Before you run the macro, open whatever stack you want cropped and duplicate it. Name it "Stack". 
+//Comments in the code are CAPITALIZED and preceded by "//". These lines are not read by the code
+//To run go to Plugins > New > Macros and copy this entire bit into the new text box. Hit cmd+R to run.
+
+//FUNCTIONS
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close(); 
+	}
+}
+
+// CHOOSE THE FOLDER THAT YOUR STACK IS IN. THIS CODE IS WRITTEN SO THAT A SINGLE FOLDER ONLY HAS
+//ONE STACK IN IT. THIS CAN BE MODIFIED.
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+proc=dir+"LowProcessImages"+File.separator;
+File.makeDirectory(proc);
+
+selectWindow("Stack");
+frames=nSlices;
+makeRectangle(0,0,20,20);
+//THERE WILL BE A SMALL SQUARE ROI IN THE TOP LEFT CORNER. ADJUST TO CORRECT SIZE FOR CROPPING.
+waitForUser("Adjust to size of desired crop. Then press OK");
+
+setBatchMode(true);
+for (n=1; n<=frames; n++) {
+	cropDir=proc+"Crop_"+n+File.separator;
+	File.makeDirectory(cellDir);
+	selectWindow("Stack");
+	setSlice(n);
+	run("Duplicate...", "title=temp");
+	selectWindow("temp");
+	saveAs("Tiff", cropDir+"Crop_"+n+".tif");
+	}
+
+setBatchMode(false);
+closeAllImages();
+
+//BY THE END, A NEW FOLDER WILL HAVE APPEARED CALLED "LowProcessImages". IN THAT FOLDER ARE SEPARATE //FOLDERS FOR EACH ONE OF YOUR CROPPED IMAGES
+	

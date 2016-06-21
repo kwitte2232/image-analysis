@@ -1,0 +1,24 @@
+pathfile=File.openDialog("Choose the file to Open:"); 
+
+filestring=File.openAsString(pathfile); 
+
+rows=split(filestring, "\n"); 
+
+x=newArray(5); 
+
+y=newArray(5);
+ 
+for(i=0; i<5; i++){ 
+	columns=split(rows[i],"\t");
+	x[i]=parseInt(columns[2]); 
+	y[i]=parseInt(columns[3]); 
+} 
+
+//while (i<rows.length)	{
+	// do something
+//}
+
+//do 	{
+
+//}
+//while  (i<rows.length);

@@ -1,0 +1,47 @@
+dir=getDirectory("Choose a Directory");
+//IJ.log(dir);
+traces=getFileList(dir);
+//IJ.log(traces.length);
+cellNumber=newArray(2);
+
+for (n=1; n<cellNumber.length; n++) {	
+			cellNumber[n]=n;
+
+	for (i=0; i<traces.length; i++) {
+		IJ.log(traces.length);
+		string=File.openAsString(dir + traces[i]);
+		rows=split(string, "\n");
+		IJ.log(rows.length);
+		counter=0;
+		
+		for(j=0; j<rows.length; j++){
+			column=split(rows[j], "\t");
+			
+			if (column[0]==n) {
+				counter++;
+				
+			}
+		}
+	
+		IJ.log("counter" + counter);
+		xcoord=newArray(counter);
+		ycoord=newArray(counter);
+		
+		for(j=0; j<rows.length; j++){
+			column=split(rows[j], "\t");
+			
+			if (column[0]==n) {
+ 				
+ 				for (k=1; k<counter; k++) {
+ 					xcoord[k-1]=parseFloat(column[2]);
+ 					ycoord[k-1]=parseFloat(column[3]);
+ 				}
+		
+			IJ.log(lengthOf(xcoord));
+			IJ.log(lengthOf(ycoord));
+			Array.print(xcoord);
+			Array.print(ycoord);
+			}
+		}
+	}
+}

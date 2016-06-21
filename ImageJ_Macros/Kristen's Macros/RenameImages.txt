@@ -1,0 +1,185 @@
+//Rename GFP Images
+waitForUser("Choose a directory to save your rename GFP images");
+
+gfpTmp = getDirectory("Choose a directory");
+gfpDir = gfpTmp+"GFP_Rename"+File.separator;
+File.makeDirectory(gfpDir);
+	if (!File.exists(gfpDir)) {
+      exit("Unable to create directory");
+	}
+
+waitForUser("Choose directory of GFP images to rename");
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+ 
+for (i=0; i<list.length; i++)	{
+	number=i+1;
+	title="GFP_000" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", gfpDir+title);
+	close();	
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+dirLength = lengthOf(dir);
+number=9;
+ 
+for (i=0; i<list.length; i++)	{
+	number++;
+	title="GFP_00" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", gfpDir+title);
+	close();	
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+number=99;
+ 
+for (i=0; i<list.length; i++)	{
+	number++;
+	title="GFP_0" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", gfpDir+title);
+	close();	
+}
+
+//Rename dsRED images
+
+waitForUser("Choose a directory to save your rename dsRED images");
+
+dsREDTmp = getDirectory("Choose a directory");
+dsredDir = tmp+"dsRED_Rename"+File.separator;
+File.makeDirectory(dsredDir);
+	if (!File.exists(dsredDir)) {
+      exit("Unable to create directory");
+	}
+
+waitForUser("Choose directory of dsRED/mCherry images to rename");
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+number=0;
+ 
+for (i=0; i<list.length; i++)	{
+	number=i+1;
+	title="dsRED_000" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", dsredDir+title);
+	close();	
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+number=9;
+ 
+for (i=0; i<list.length; i++)	{
+	number++;
+	title="dsRED_00" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", dsredDir+title);
+	close();	
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+list=getFileList(dir);
+number=99;
+ 
+for (i=0; i<list.length; i++)	{
+	number++;
+	title="dsRED_0" + number;
+	IJ.log(title);
+	nextStack = list[i];
+	open(dir+nextStack);
+	rename(title);
+	saveAs("Tiff", dsredDir+title);
+	close();	
+}
+
+//Zproject the Renamed GFP images
+
+waitForUser("Choose a directory to save your projected GFP images");
+
+tmp = getDirectory("Choose a directory");
+zGFPDir = tmp+"ZMax_GFP"+File.separator;
+File.makeDirectory(zGFPDir);
+	if (!File.exists(zGFPDir)) {
+      exit("Unable to create directory");
+	}
+
+gfpZDir=gfpTmp+"GFP_Rename";
+print(gfpZDir);
+
+list=getFileList(gfpZDir);
+Array.print(list);
+number=0;
+ 
+for (i=0; i<list.length; i++){	
+	number++;
+	//IJ.log(number);
+	nextStack=list[i];
+	open(dir+nextStack);
+	run("Z Project...", "start=1 stop=3 projection=[Max Intensity]");
+	title=getTitle();
+	saveAs("Tiff", zGFPDir+title);
+	close();
+	selectWindow(nextStack);
+	close();
+}
+
+//Zproject the Renamed GFP images
+
+waitForUser("Choose a directory to save your projected dsRED images");
+
+tmp = getDirectory("Choose a directory");
+zdsREDDir = tmp+"ZMax_dsRED"+File.separator;
+File.makeDirectory(zdsREDDIR);
+	if (!File.exists(zdsREDDIR)) {
+      exit("Unable to create directory");
+	}
+
+//print("");
+//print(Dir);
+
+//waitForUser("Choose a directory containing the image stacks to be processed.\n \nThe directory should contain only image stacks to be processed.");
+
+dsREDZDir=dsREDTmp+"dsRED_Rename";
+print(dsREDZDir);
+
+list=getFileList(dsREDZDir);
+Array.print(list);
+number=0;
+ 
+for (i=0; i<list.length; i++){	
+	number++;
+	//IJ.log(number);
+	nextStack=list[i];
+	open(dir+nextStack);
+	run("Z Project...", "start=1 stop=3 projection=[Max Intensity]");
+	title=getTitle();
+	saveAs("Tiff", zdsREDDir+title);
+	close();
+	selectWindow(nextStack);
+	close();
+}

@@ -1,0 +1,138 @@
+//FUNCTIONS
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+proc=dir+"LowProcessImages"+File.separator;
+File.makeDirectory(proc);
+
+selectWindow("Duplicate_mCherry");
+frames=nSlices();
+runMacro("BleachCorrection.txt");
+title="mCherry_BleachCorrection";
+saveAs("Tiff", proc+title);
+
+selectWindow("mCherry_BleachCorrection.tif");
+run("Duplicate...", "title=mCherry duplicate range=1-["+frames+"]");
+
+selectWindow("Targets");
+run("Grays");
+run("Duplicate...", "title=Edges_Target duplicate range=1-["+frames+"]");
+
+run("Find Edges", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+saveAs("Tiff", proc+"Edges_Target");
+
+selectWindow("Nom");
+run("Grays");
+run("Duplicate...", "title=Nom_Transform duplicate range=1-["+frames+"]");
+
+run("Find Edges", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+saveAs("Tiff", proc+"Nom_Transform");
+
+
+selectWindow("mCherry");
+
+run("8-bit");
+run("Merge Channels...", "c1=mCherry c2=Edges_Target.tif create keep");
+
+waitForUser("Adjust Brightness/Contrast");
+
+run("Stack to RGB", "slices");
+
+selectWindow("Composite");
+run("8-bit");
+
+run("MultiStackReg", "stack_1=Composite action_1=Align file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");
+	//Save the transformation matrix into "LowProcessImages" folder
+
+title="MultiStack_Merge";
+saveAs("Tiff", proc+title);
+
+trans=proc+"TransformationMatrices.txt";
+
+selectWindow("mCherry_BleachCorrection.tif");
+run("Duplicate...", "title=mCherry_Transform duplicate range=1-["+frames+"]");
+run("MultiStackReg", "stack_1=mCherry_Transform action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"mCherry_Transform");
+
+
+selectWindow("Targets");
+run("MultiStackReg", "stack_1=Targets action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"Targets_Transform");
+
+selectWindow("Edges_Target.tif");
+run("MultiStackReg", "stack_1=Edges_Target.tif action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"Edges_Target_Transform");
+
+selectWindow("Nom_Transform.tif");
+run("MultiStackReg", "stack_1=Nom_Transform.tif action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"Nom_Transform");
+
+//IMPORTROIS_CENTERPOINTS
+
+rgn=dir+"Regions01"+File.separator;
+list=getFileList(rgn);
+
+newImage("Untitled", "8-bit Black", 512, 512, frames);
+selectWindow("Untitled");
+frames=nSlices();
+
+for (n=1; n<=frames; n++) {
+    roiManager("Reset");
+	  setSlice(n);
+    title=n;
+    i=n-1;
+    region=list[i];
+   	run("Metamorph ROI", "open=["+rgn+region+"]");
+    count=roiManager("count");
+    //waitForUser("Debugging");
+    for (j=0; j<count; j++) {
+        roiManager("Select", j);
+		      List.setMeasurements;
+		      centerX=List.getValue("X");
+		      centerY=List.getValue("Y");
+		      pixel=getPixel(centerX, centerY);
+		      makeRectangle(centerX, centerY,1,1);
+		      setColor("white");
+		      fill();
+	    }
+	    selectWindow("Untitled");
+}
+
+selectWindow("Untitled");
+saveAs("Tiff", proc+"CenterPoints");
+selectWindow("CenterPoints.tif");
+run("MultiStackReg", "stack_1=CenterPoints.tif action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"CenterPoints_Transform");
+
+setBatchMode(true);
+open(proc+"mCherry_Transform.tif");
+frames=nSlices();
+run("Duplicate...", "title=mCherry duplicate range=1-["+frames+"]");
+
+open(proc+"Targets_Transform.tif");
+run("Duplicate...", "title=Targets duplicate range=1-["+frames+"]");
+
+selectWindow("mCherry");
+run("8-bit");
+run("Combine...", "stack1=mCherry stack2=Targets");
+
+title="Combine_mCherry_Targets";
+saveAs("Tiff", proc+title);
+
+closeAllImages();
+
+setBatchMode(false);

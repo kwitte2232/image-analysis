@@ -1,0 +1,50 @@
+//please send comments to rietdorf@embl.de
+// updates and other macros available at www.embl.de/eamnet/html/downloads.html
+
+	requires("1.33n");
+function check4pic() {
+	if (nImages==0) exit("open an image");
+}
+
+function check4stack() {
+	if (nSlices==0) exit("open a stack");
+}
+
+function pic2stack() {
+	if (nSlices==0) run("Convert Images to Stack");
+}
+
+
+function  check4ROItype(mintype,maxtype,notype) {
+
+	if ((selectionType()<mintype)||(selectionType()>maxtype)||(selectionType()==notype)||(selectionType()==-1)){
+		if ((mintype==3)&&(maxtype==7)) exit("select a line ROI");
+		if ((mintype==0)&&(maxtype==3)) exit("select an area ROI");
+		else exit("select a suitable ROI");
+	}
+}
+
+
+	requires("1.33n");
+        check4pic();
+        pic2stack();
+        if (selectionType()==-1) run("Select All");
+        check4ROItype(0,3,-1);
+        run("Set Slice...", "slice="+1);
+        run("Set Measurements...", "  mean redirect=None decimal=9");
+	  run("Select None");
+	setBatchMode(true);				
+	for(l=0; l<nSlices+1; l++) {
+		run("Restore Selection");
+		run("Clear Results");
+		run("Measure");
+		picsum=getResult("Mean",0);
+		if(l==0){picsum1=picsum;}
+		int_ratio=picsum1/picsum;
+                		//print(int_ratio+'  '+picsum1+'  '+picsum);
+		run("Select None");
+		run("Multiply...", "slice value="+int_ratio);
+		run("Next Slice [>]");
+	}
+	setBatchMode(false);
+

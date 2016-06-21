@@ -1,0 +1,151 @@
+setOption("DisableUndo", true);
+
+waitForUser("Choose a directory containing the image stacks to be processed.\n \nThe directory should contain only image stacks to be processed.");
+
+dir=getDirectory("Choose a directory");
+
+list=getFileList(dir);
+
+procDir=dir+"processedAreas/";
+File.makeDirectory(procDir);
+print("Images discarded:");
+
+for (i=0; i<list.length; i++)	{
+	roiManager("Reset");
+	
+	nextStack = list[i];
+	open(dir+nextStack);
+	run("In");
+	run("In");
+	run("In");
+	run("In");
+	name=replace(getTitle(), ".tif", "");
+	
+	setSlice(1);
+	run("Enhance Contrast", "saturated=0.5");
+	dir=getDirectory("image");
+	
+// 	thumbDir=replace(dir, "processedImages/", "");
+// 	thumbName=substring(name, 0, 7)+"_thumb.tif";
+// 	thumbOpen=isOpen(thumbName);
+// 	if (thumbOpen==0)	{
+// 		if (i > 0)	{
+// 			selectWindow(lastThumbName);
+// 			close();
+// 		}
+// 		open(thumbDir+thumbName);
+// 		setLocation(40, 0);
+// 		lastThumbName=thumbName;
+// 	}
+		
+	roiManager("Reset");
+	
+//		waitForUser("Click OK to proceed.");	// Debugging
+	
+
+	selectWindow(name+".tif");
+	run("Select None");
+	setSlice(1);
+	setAutoThreshold("Li");
+	run("Threshold...");
+	run("Create Selection");
+	resetThreshold();
+	
+	//waitForUser("Click OK to proceed.");	// Debugging
+	
+	selectWindow(name+".tif");
+	run("Make Inverse");
+	run("Enlarge...", "enlarge=1");
+	run("Enlarge...", "enlarge=-1");
+	roiManager("Add");
+	count=roiManager("count");
+	roiManager("Select", count-1);
+	type = selectionType();
+	if (type == 9)	{
+		roiManager("Split");
+		count=roiManager("count");
+		while (count > 1)	{
+			roiManager("Select", 0);
+			roiManager("Delete");
+			count=roiManager("count");
+		}
+	}
+	count=roiManager("count");
+	roiManager("Select", count-1);
+	roiManager("Rename", "wholeCell");
+	
+//		waitForUser("Click OK to proceed.");	// Debugging
+	
+	pixOffset=3;
+	pixOffset=-pixOffset;
+	run("Enlarge...", "enlarge="+pixOffset);
+	roiManager("Add");
+	count=roiManager("count");
+	roiManager("Select", count-1);
+	roiManager("Rename", "bigCplasm");
+	
+	run("Select None");
+	run("Duplicate...", "title=temp");
+	roiManager("Select", count-1);
+	run("Make Inverse");
+	run("Clear");
+	run("Select None");
+	setAutoThreshold("Li");
+	run("Create Selection");
+	resetThreshold();
+	run("Enlarge...", "enlarge=-2");
+	roiManager("Add");
+	count=roiManager("count");
+	roiManager("Select", count-1);
+	roiManager("Rename", "threshCplasm");
+	selectWindow("temp");
+	close();
+	
+//		waitForUser("Click OK to proceed.");	// Debugging
+	
+	selectWindow(name+".tif");
+	roiManager("Select", count-2);
+	run("Make Band...", "band=3");
+	roiManager("Add");
+	count=roiManager("count");
+	roiManager("Select", count-1);
+	roiManager("Rename", "PM");
+	
+//		waitForUser("Click OK to proceed.");	// Debugging
+	
+	resetThreshold();
+	
+	selectWindow(name+".tif");
+	width=getWidth();
+	height=getHeight();
+	makeOval(0, 0, width, height);
+	run("Make Inverse");
+	roiManager("Add");
+	count=roiManager("count");
+	roiManager("Select", count-1);
+	roiManager("Rename", "bkgrnd");
+	
+// 	selectWindow(thumbName);
+// 	resetThreshold();
+	selectWindow(name+".tif");
+	
+	roiManager("Select", count-2);
+	
+	saveThis = getBoolean("Save for further processing?");
+	if (saveThis)	{
+		roiManager("Save", procDir+name+"_ROIs.zip");
+	}
+	else	{
+		print(name);
+		selectWindow("Log");
+		save(procDir+"discards.txt");
+	}
+	
+	selectWindow(name+".tif");
+	run("Close");
+	roiManager("Reset");
+//	run("Select None");
+}
+
+selectWindow("Log");
+run("Close");

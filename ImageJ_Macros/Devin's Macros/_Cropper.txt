@@ -1,0 +1,70 @@
+waitForUser("Choose a directory containing the image stacks to be processed.\n \nThe directory should contain only image stacks to be processed.");
+
+dir=getDirectory("Choose a directory");
+
+list=getFileList(dir);
+
+procDir=dir+"/processedImages/";
+File.makeDirectory(procDir);
+
+for (i=0; i<list.length; i++)	{
+	
+	nextStack = list[i];
+	open(dir+nextStack);
+	
+	setBatchMode(true);
+	
+	name=replace(getTitle(), ".tif", "");
+	setLocation(750, 200);
+	File.makeDirectory(procDir);
+	setSlice(1);	
+	run("Duplicate...", "title=temp");
+	run("Enhance Contrast", "saturated=0.5");
+	run("8-bit");
+	rename(name+"_thumb.tif");	
+	setBatchMode(false);
+	setLocation(50, 50);
+	
+	selectWindow(name+".tif");
+	run("Enhance Contrast", "saturated=0.5");
+	
+	numCrops=0;
+	
+	do	{
+		selectWindow(name+"_thumb.tif");
+		if (numCrops == 0)
+			makeRectangle(1, 1, 75, 75);		
+		waitForUser("Move or resize the ROI and click OK.");
+		numCrops++;
+		run("Colors...", "foreground=white background=white selection=yellow");
+		run("Draw");
+		getSelectionBounds(x, y, width, height);
+		xText=x+2;
+		yText=y+15;
+		setColor(255,255,255);
+		setFont("SansSerif" , 12, "antialiased");
+		drawString(numCrops, xText, yText);
+		saveAs("Tiff", dir+name+"_thumb.tif");
+		
+		selectWindow(name+".tif");
+		run("Restore Selection");
+		run("Duplicate...", "title=temp duplicate");
+		if (numCrops <= 9)
+			saveAs("Tiff", procDir+name+"_crop0"+numCrops+".tif");
+		else
+			saveAs("Tiff", procDir+name+"_crop"+numCrops+".tif");
+		close();
+		
+		anotherCrop=getBoolean("Would you like to crop another cell in this stack?");
+	}	while (anotherCrop);
+	
+	closeAllImages();
+}
+
+
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close(); 
+	}
+}

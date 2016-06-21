@@ -1,0 +1,32 @@
+
+
+waitForUser("Choose a directory containing the image stacks to be processed.\n \nThe directory should contain only image stacks to be processed.");
+
+dir=getDirectory("Choose a directory");
+print(dir);
+
+list=getFileList(dir);
+
+procDir=dir+"/processedImages/";
+File.makeDirectory(procDir);
+
+dirLength = lengthOf(dir);
+//shortDir = substring(dir, 0, dirLength-1)
+//slashIndex = lastIndexOf(shortDir, "/");
+//prefix = substring(shortDir, slashIndex+1);
+//topDir = substring(shortDir, 0, slashIndex+1);
+
+ 
+	for (i=0; i<list.length; i++)	{
+		
+		nextStack = list[i];
+		open(dir+nextStack);
+		//numLines=0;
+		//run("Clear Results");
+		//name=replace(getTitle(), ".tif","");
+		//rename(name+"_line.tif");
+		//newname=name+"_rois.tif";
+		
+		run("Z Project...", "start=1 stop=10 projection=[Max Intensity]");
+		}
+		run("Images to Stack");

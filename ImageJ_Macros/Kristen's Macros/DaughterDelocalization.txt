@@ -1,0 +1,213 @@
+
+
+roiManager("reset");
+
+msg="Place a circle in the center of the growing bud";
+waitForUser(msg + "\n" + "When finished, press OK");
+selectWindow("Duplicate_dsRED");
+roiManager("Add");
+List.setMeasurements;
+//print(List.getList);
+budX=List.getValue("X");
+budY=List.getValue("Y");
+
+waitForUser("Choose the current cell folder");
+tmp=getDirectory("Choose a Directory");
+
+daughterDir=tmp+"Daughter_Lines"+File.separator;
+File.makeDirectory(daughterDir);
+  if (!File.exists(daughterDir))
+      exit("Unable to create directory");
+  print("");
+  print(daughterDir);
+  
+selectWindow("Duplicate_dsRED");
+frames=nSlices();
+r=nResults();
+cellNumber=newArray(frames+1);
+numRows=0;
+
+selectWindow("Duplicate_dsRED");
+
+setBatchMode(true);
+
+//IMPORT THE MOTHER CELL SNAKES
+
+for (n=1; n<=f; n++) {
+	setSlice(n);
+	cellNumber[n]=n;
+	//IJ.log("n=" + n);
+	badPts=0;
+			
+		for (i=0; i<traces.length; i++) {
+			//IJ.log("traces=" + traces.length);
+			string=File.openAsString(dir + traces[i]);
+			rows=split(string, "\n");
+			IJ.log("#rows=" + rows.length);
+			counter=0;
+		
+			for(j=0; j<rows.length; j++){
+				column=split(rows[j], "\t");
+			
+				if (column[0]==n) {
+					counter++;		
+				}
+			}
+			
+			//IJ.log("numRows=" + numRows);
+			//IJ.log("counter=" + counter);
+			x=newArray(rows.length);
+			y=newArray(rows.length);
+			distTmp=newArray(rows.length);
+			xcoordTmp=newArray(counter);
+			ycoordTmp=newArray(counter);
+			
+			//ADD THE SNAKE ROIS, DEFINE THE CENTER, AND DRAW A LINE FROM BUD TO OPP SIDE
+		
+			for(j=numRows; j<rows.length; j++){
+				column=split(rows[j], "\t");
+				
+				if (column[0]==n) { 
+					x[j]=parseFloat(column[2]);
+					y[j]=parseFloat(column[3]);
+					numRows++;
+					//IJ.log("numRows="+numRows);
+ 				}
+ 			}
+ 				
+ 			if (n>1) {
+ 				start=numRows-counter;
+ 			} else {
+ 				start=0;
+ 			}
+ 				
+ 			//IJ.log("start=" + start);
+ 			xcoordTmp=Array.slice(x, start, numRows);
+			ycoordTmp=Array.slice(y, start, numRows);
+			//IJ.log("distTmp="+distTmp[j]);
+ 			
+ 			makeSelection("polyline", xcoordTmp, ycoordTmp);
+			run("Interpolate", "interval=1");
+			run("Line to Area");
+			//roiManager("Add");
+			List.setMeasurements;
+			//print(List.getList);
+			cellX=List.getValue("X");
+			cellY=List.getValue("Y");
+			//IJ.log("cellX="+cellX+"\n"+"cellY="+cellY);
+			
+			diffX=cellX-budX;
+			diffY=cellY-budY;
+			m=(diffY)/(diffX);
+			//IJ.log("m="+m);
+			b=budY-m*budX;
+			//IJ.log("b="+b);
+			
+			//waitForUser("check"); //Debugging
+			
+			//FIND THE DISTANCES FROM THE LINE TO POINTS OF THE SNAKE THAT ARE OPP THE BUD
+			
+ 			for(j=distRows; j<rows.length; j++){
+				column=split(rows[j], "\t");
+				dist=newArray(counter);
+				
+				if (column[0]==n) { 
+					xPt=parseFloat(column[2]);
+ 					yPt=parseFloat(column[3]);
+ 					distRows++;
+ 					
+ 					if (cellX<budX){
+ 						
+ 						if (xPt<=cellX){
+ 							top=yPt-m*xPt-b;
+ 							//IJ.log("top="+top);
+ 							bottom=m*m+1;
+ 							//IJ.log("bottom="+bottom);
+ 							distTmp[j]=(abs(top))/(sqrt(bottom));
+							//IJ.log("numRows Again="+numRows);
+						} else {
+ 						//IJ.log("xPt="+xPt+"\t"+"yPt="+yPt+"\n"+"xPt on the budding half of the cell");
+ 						badPts++;
+ 						//IJ.log("badPts="+badPts);
+ 						}
+ 					}
+ 					
+ 					if (cellX>budX){
+ 						
+ 						if (xPt>=cellX){
+ 							top=yPt-m*xPt-b;
+ 							//IJ.log("top="+top);
+ 							bottom=m*m+1;
+ 							//IJ.log("bottom="+bottom);
+ 							distTmp[j]=(abs(top))/(sqrt(bottom));
+							//IJ.log("numRows Again="+numRows);
+						} else {
+ 						//IJ.log("xPt="+xPt+"\t"+"yPt="+yPt+"\n"+"xPt on the budding half of the cell");
+ 						badPts++;
+ 						//IJ.log("badPts="+badPts);
+ 						}
+ 					}
+ 				}
+ 			}
+ 				
+ 			dist=Array.slice(distTmp, start, numRows);
+ 			
+ 			//REARRANGE XCOORDTMP AND YCOORDTMP ARRAYS SO THAT THE START AND END ARE AT THE POINT CLOSEST TO THE LINE OPP THE BUD 
+ 			
+ 			//IJ.log("dist=");
+ 			//Array.print(dist);
+ 			//printArray(dist);
+			value=minNonZeroOfArray(dist);
+ 			indexMin=indexOfArray(dist);
+ 			end=indexMin-1;
+ 			//IJ.log("min of dist="+value);
+ 			//IJ.log("index of min="+indexMin);
+ 			xSplit1=Array.slice(xcoordTmp, indexMin, counter);
+ 			xSplit2=Array.slice(xcoordTmp, 0, end);
+ 			xcoord=Array.concat(xSplit1, xSplit2);
+ 			//printArray(xcoord);
+ 			ySplit1=Array.slice(ycoordTmp, indexMin, counter);
+ 			ySplit2=Array.slice(ycoordTmp, 0, end);
+ 			ycoord=Array.concat(ySplit1, ySplit2);
+ 			//printArray(ycoord);
+ 			
+ 			makeSelection("polyline", xcoord, ycoord);
+ 			run("Interpolate", "interval=1");
+			run("Line to Area");
+			List.setMeasurements;
+			//print(List.getList);
+			cellX=List.getValue("X");
+			cellY=List.getValue("Y");
+			//IJ.log("cellX="+cellX+"\n"+"cellY="+cellY);
+			
+			diffX=cellX-budX;
+			diffY=cellY-budY;
+			m=(diffY)/(diffX);
+			//IJ.log("m="+m);
+			b=budY-m*budX;
+			//IJ.log("b="+b);
+			
+			//waitForUser("check"); //Debugging
+ 		}
+ 	
+ 	
+ 	
+	setSlice(n);
+	title=getSliceNumber();
+	run("Straighten...", "line=6");
+	selectWindow("Duplicate_dsRED-1");
+	w=getWidth;
+	//IJ.log(w);
+	if (w<100) {
+		run("Size...", "width=100 height=6 average interpolation=Bilinear");
+	}	
+	saveAs("Tiff", daughterDir+title);
+	selectWindow("Duplicate_dsRED");
+	}
+	
+stack=tmp+"Daughter_Lines";
+run("Image Sequence...", "open=stack number=["+frames+"] starting=1 increment=1 scale=100 file=[] or=[] sort");
+run("Make Montage...", "columns=1 rows=["+frames+"] scale=1 first=1 last=121 increment=1 border=0 font=12");
+saveAs("Tiff",tmp+"Daughter_Montage");
+
+setBatchMode(false);

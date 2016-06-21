@@ -1,0 +1,30 @@
+Yeast Spore Enrichment for Random Spore Analysis
+(Ref.: Rockmill, B., E.J. Lambie, and G.S. Roeder. 1991. Spore enrichment. Methods Enzymol. 194:146-149.)
+ 
+1. Prepare a suspension from ≈1X108 cells and asci of a sporulated culture in a polypropylene 1.5 ml µfuge tube containing 180 µl sterile DW. If sporulation was carried out on KAc plates, then suspend cells scraped off of plate in sterile DW. If sporulation was carried out in KAc broth, then wash cells and asci 2X in 1 ml sterile DW before suspending in 180 µl DW.
+ 
+2. Add 20 µl of a 5 mg/ml solution of Zymolyase 20T in ZL buffer to the suspension and mix. Incubate at 30˚C for between 20 and 60 min depending on how quickly the digestion progresses. Follow the progress of the digestion microscopically.
+ 
+              ZL Buffer                                 For 100 ml
+              0.1 M NaPO4, pH 6.5                 10 ml 1.0 M NaPO4, pH 6.5
+              1.2 M Sorbitol                           21.9 g Sorbitol
+              40% Glycerol                            80 ml 50% Glycerol
+              DW                                          Up to 100 ml
+ 
+Filter sterilize.
+Dissolve 5 mg Zymolyase 20T in 1 ml ZL Buffer.
+Store solution at -20˚C in a non-frost-free freezer.
+ 
+3. Spin 30 sec in µfuge to pellet spores and cells. Discard supernatant.
+ 
+4. Suspend pellet in 1 ml DW and respin in µfuge. Discard supernatant.
+ 
+5. Suspend pellet in 0.1 ml DW and vortex on high speed for 2 min.
+ 
+6. Pour the liquid out of the µfuge tube and rinse the tube 2X with 1 ml DW. Pour liquid out of tube each time. (Note: The hydrophobic spores will stick to the µfuge tube wall while the cells and debris will remain mostly in suspension.)
+ 
+7. Add 1.0 ml sterile 0.01% NP-40 to the tube and sonicate on ice for 2 min using the microtip of the Branson Sonifier with the Output Control set at 1 and the % Duty Cycle set at constant. (Note: This should give an Output level reading of ≈20.)
+ 
+8. Prepare 4X 1:10 serial dilutions of the sonicated suspension (50 µl into 450 µl 0.01% NP-40).
+ 
+9. Spread 200 µl of each dilution on a YEPD plate or selective plate depending upon the phenotype of the desired meiotic segregants.

@@ -1,0 +1,156 @@
+//Cropper.txt altered from Devin's Cropper.txt. Used to crop out individual cells in multiple separate channels/stacks
+
+
+dir=getDirectory("Choose a directory");
+print(dir);
+
+proc=dir+"LowProcessImages"+File.separator;
+
+procDir=dir+"/processedImages/";
+File.makeDirectory(procDir);
+
+open(proc+"mCherry_Transform.tif");
+selectWindow("mCherry_Transform.tif")
+frames=nSlices();
+run("Duplicate...", "title=mChStack duplicate range=1-["+frames+"]");
+selectWindow("mChStack");
+setSlice(1);
+run("Duplicate...", "title=temp");
+
+//REPEAT THESE 3 LINES OF CODE FOR AS MANY STACKS/CHANNELS YOU WANT TO CROP
+open(proc+"Targets_Transform.tif");
+selectWindow("Targets_Transform.tif");
+run("Duplicate...", "title=Targets duplicate range=1-["+frames+"]");
+//
+
+open(proc+"CenterPoints_Transform.tif");
+selectWindow("CenterPoints_Transform.tif");
+waitForUser("click on the image");
+run("Duplicate...", "title=Centers duplicate range=1-["+frames+"]");
+
+open(proc+"Nom_Transform.tif");
+selectWindow("Nom_Transform.tif");
+run("Duplicate...", "title=Nom duplicate range=1-["+frames+"]");
+
+waitForUser("Debugging");
+
+// CROP CELLS
+
+cropCells = getBoolean("Would you like to crop any fields in this directory?");
+
+if (cropCells) {
+
+		setBatchMode(true);
+
+		selectWindow("mChStack");
+		name=getTitle();
+		selectWindow("temp");
+		run("8-bit");
+		rename(name+"_thumb.tif");
+		setBatchMode(false);
+		setLocation(50, 50);
+
+
+		selectWindow("mChStack");
+		//run("Enhance Contrast", "saturated=0.5");
+		cropThis = getBoolean("Would you like to crop any cells in this stack?");
+
+		if (cropThis)	{
+			numCrops=0;
+
+			do	{
+				selectWindow(name+"_thumb.tif");
+				if (numCrops==0)	{
+					makeRectangle(1, 1, 75, 75);
+				}
+				waitForUser("Move or resize the ROI and click OK.");
+				numCrops++;
+				cellDir=procDir+"/Cell_"+numCrops+File.separator;
+				File.makeDirectory(cellDir);
+				run("Colors...", "foreground=white background=white selection=yellow");
+				run("Draw");
+				getSelectionBounds(x, y, width, height);
+				xText=x+2;
+				yText=y+15;
+				setColor(255,255,255);
+				setFont("SansSerif" , 12, "antialiased");
+				drawString(numCrops, xText, yText);
+				saveAs("Tiff", dir+name+"_thumb.tif");
+
+				//FOR EACH CHANNEL THAT YOU WANT TO CROP, REPEAT THE BLOCK OF CODE CALLED "CHANNEL CROP"
+					//ALTER SELECTWINDOW() COMMAND AND NAME VARIABLES AS NEEDED
+
+				//BEGIN "CHANNEL CROP"
+				selectWindow("mChStack");
+				run("Restore Selection");
+				run("Duplicate...", "title=temp duplicate");
+				saveAs("Tiff", cellDir+"mChStack_crop"+".tif");
+				// if (numCrops <= 9)
+// 					saveAs("Tiff", cellDir+"mChStack_crop"+".tif");
+// 				else
+// 					saveAs("Tiff", cellDir+"mChStack_crop"+".tif");
+				//END "CHANNEL CROP"
+
+				selectWindow("Nom");
+				run("Restore Selection");
+				run("Duplicate...", "title=temp duplicate");
+				if (numCrops <= 9)
+					saveAs("Tiff", cellDir+"Nom_crop0"+numCrops+".tif");
+				else
+					saveAs("Tiff", cellDir+"Nom_crop"+numCrops+".tif");
+
+				selectWindow("Centers");
+				run("Restore Selection");
+				run("Duplicate...", "title=temp duplicate");
+				saveAs("Tiff", cellDir+"Centers_crop"+".tif");
+				// if (numCrops <= 9)
+// 					saveAs("Tiff", cellDir+"Centers_crop"+".tif");
+// 				else
+// 					saveAs("Tiff", cellDir+"Centers_crop"+".tif");
+
+				selectWindow("Targets");
+				run("Restore Selection");
+				run("Duplicate...", "title=temp duplicate");
+				run("Duplicate...", "title=temp2 duplicate");
+				saveAs("Tiff", cellDir+"Targets_crop"+".tif");
+				// if (numCrops <= 9)
+// 					saveAs("Tiff", cellDir+"Targets_crop"+".tif");
+// 				else
+// 					saveAs("Tiff", cellDir+"Targets_crop"+numCrops+".tif");
+				close();
+
+				selectWindow("temp");
+				run("Find Edges", "stack");
+				run("Smooth", "stack");
+				run("Smooth", "stack");
+				run("Smooth", "stack");
+				if (numCrops <= 9)
+					saveAs("Tiff", cellDir+"Targets_Edges0"+numCrops+".tif");
+				else
+					saveAs("Tiff", cellDir+"Targets_Edges"+numCrops+".tif");
+
+				close();
+
+				anotherCrop=getBoolean("Would you like to crop another cell in this stack?");
+			}	while (anotherCrop);
+
+			selectWindow(name+"_thumb.tif");
+			saveAs("Tiff", procDir+name+"_thumb.tif");
+			closeAllImages();
+		}
+
+}
+
+setBatchMode(false);
+
+// END CROP CELLS
+
+
+// FUNCTIONS
+
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}

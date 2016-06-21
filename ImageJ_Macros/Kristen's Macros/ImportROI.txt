@@ -1,0 +1,53 @@
+setBatchMode(true);
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+imgDir=dir+"Images"+File.separator;
+File.makeDirectory(imgDir);
+  if (!File.exists(imgDir))
+      exit("Unable to create directory");
+//waitForUser("Choose the regions folder");
+rgn=dir+"Regions01"+File.separator;
+list=getFileList(rgn);
+selectWindow("Duplicate_mCherry");
+frames=nSlices();
+run("Duplicate...", "title=Duplicate_mCherry_1 duplicate range=1-["+frames+"]");
+selectWindow("Duplicate_mCherry");
+
+for (n=1; n<=frames; n++) {
+    setSlice(n);
+    title=n;
+    run("Duplicate...", "title=Duplicate");
+    selectWindow("Duplicate");
+    i=n-1;
+    region=list[i];
+   	run("Metamorph ROI", "open=["+rgn+region+"]");
+    count=roiManager("count");
+    //waitForUser("Debugging");
+    for (j=0; j<count; j++) {
+        roiManager("Select", j);
+		run("Add Selection...");
+	}
+	//waitForUser("Debugging");
+    selectWindow("Duplicate");
+    saveAs("Tiff", imgDir+title);
+    roiManager("Reset");
+    selectWindow("Duplicate_mCherry_1");
+}
+setBatchMode(false);
+
+stack=dir+"Images";
+run("Image Sequence...", "open=stack number=["+frames+"] starting=1 increment=1 scale=100 file=[] or=[] sort");
+title="mCherry_Targets";
+saveAs("Tiff",dir+"LowProcessImages/"+title);
+
+selectWindow("mCherry_Targets.tif");
+run("Duplicate...", "title=Duplicate duplicate range=1-["+frames+"]");
+selectWindow("Duplicate");
+run("RGB Color");
+run("Flatten", "stack");
+title="mCherry_Targets_Flatten";
+saveAs("Tiff",dir+"LowProcessImages/"+title);
+
+
+
+

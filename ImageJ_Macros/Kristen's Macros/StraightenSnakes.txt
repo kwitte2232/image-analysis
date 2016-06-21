@@ -1,0 +1,47 @@
+//This part sets up a folder in the home directory (for me: Users/Kristen) 
+//called "straight Snakes
+
+waitForUser("Choose a directory to save your straight Snakes.");
+tmp = getDirectory("Choose a directory");
+myDir = tmp+"Straight_Snakes"+File.separator;
+File.makeDirectory(myDir);
+  if (!File.exists(myDir))
+      exit("Unable to create directory");
+  print("");
+  print(myDir);
+
+//The for loop goes through the whole stack of frames
+for (n=1; n<=nSlices; n++) {
+	setSlice(n);
+	if (n==1) {
+			title = "Montage";
+			IJ.log("title: " + title);
+		} else {
+			title = "NextRow";
+		}
+	run("Snake to Roi");
+		//When the loop runs, you will have to re-choose the snake txt file 
+		//everytime. I make a copy at put it on the desktop and call it "CurrentSnake"
+		//to make it easy on myself
+	run("Interpolate", "interval=1");
+	run("Area to Line");
+	run("Straighten...", "line=6");
+	rename(title);
+		if (title=="NextRow") {
+			run("Combine...", "stack1=Montage stack2=NextRow combine");
+			}
+	rename("Montage");
+		//My membrane is about 6 pixels wide, so you can change these as you need.
+		//A new window will open made of the line
+	//saveAs("Tiff", myDir+title);
+		//This command saves the line window ("Duplicate-1") as a TIFF, with the title 
+		//being the slice number from "Duplicate", and saves it to the folder that was 
+		//created at the start
+	selectWindow("Duplicate");
+		//Reselects the stack and goes through the for loop again
+}
+// selectWindow("Duplicate");
+// number=nSlices;
+// run("Image Sequence...", "open=/Users/Kristen/Straight_Snakes number=nSlices starting=1 increment=1 scale=100 file=[] or=[] sort");
+// last=nSlices;
+// run("Make Montage...", "columns=1 rows=142 scale=1 first=1 last=nSlices increment=1 border=0 font=12");

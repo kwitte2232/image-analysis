@@ -1,0 +1,129 @@
+//Adds the value to the array at the specified position, expanding if necessary
+//Returns the modified array
+function addToArray(value, array, position) {
+    if (position<lengthOf(array)) {
+        array[position]=value;
+    } else {
+        temparray=newArray(position+1);
+        for (i=0; i<lengthOf(array); i++) {
+            temparray[i]=array[i];
+        }
+        temparray[position]=value;
+        array=temparray;
+    }
+    return array;
+}
+
+//Appends the value to the array
+//Returns the modified array
+function appendToArray(value, array) {
+    temparray=newArray(lengthOf(array)+1);
+    for (i=0; i<lengthOf(array); i++) {
+        temparray[i]=array[i];
+    }
+    temparray[lengthOf(temparray)-1]=value;
+    array=temparray;
+    return array;
+}
+
+//Prints the array in a human-readable form
+function printArray(array) {
+    string="";
+    for (i=0; i<lengthOf(array); i++) {
+        if (i==0) {
+            string=string+array[i];
+        } else {
+            string=string+", "+array[i];
+        }
+    }
+    print(string);
+}
+
+//Returns the minimum of the array
+function minOfArray(array) {
+    max=0;
+    for (a=0; a<lengthOf(array); a++) {
+        max=maxOf(array[a], max);
+    }
+    min=max;
+    for (a=0; a<lengthOf(array); a++) {
+        min=minOf(array[a], min);
+    }
+    return min;
+}
+
+//Returns the maximum of the array
+function maxOfArray(array) {
+    min=0;
+    for (a=0; a<lengthOf(array); a++) {
+        min=minOf(array[a], min);
+    }
+    max=min;
+    for (a=0; a<lengthOf(array); a++) {
+        max=maxOf(array[a], max);
+    }
+    return max;
+}
+
+//Returns the number of times the value occurs within the array
+function occurencesInArray {
+    count=0;
+    for (a=0; a<lengthOf(array); a++) {
+        if (array[a]==value) {
+            count++;
+        }
+    }
+    return count;
+}
+
+//Returns the indices at which a value occurs within an array
+function indexOfArray(array, value) {
+    count=0;
+    for (a=0; a<lengthOf(array); a++) {
+        if (array[a]==value) {
+            count++;
+        }
+    }
+    if (count>0) {
+        indices=newArray(count);
+        count=0;
+        for (a=0; a<lengthOf(array); a++) {
+            if (array[a]==value) {
+                indices[count]=a;
+                count++;
+            }
+        }
+        return indices;
+    }
+}
+
+
+profile1 = getProfile(); 
+
+Array.getStatistics(profile1,min,max); 
+
+A = indexOfArray(profile1, max); 
+
+And the associated function.... 
+
+//Returns the indices at which a value occurs within an array 
+function indexOfArray(array, value) { 
+    count=0; 
+    for (i=0; i<lengthOf(array); i++) { 
+        if (array[i]==value) { 
+            count++; 
+        } 
+    } 
+    if (count>0) { 
+        indices=newArray(count); 
+        count=0; 
+        for (i=0; i<lengthOf(array); i++) { 
+            if (array[i]==value) { 
+                indices[count]=i; 
+                count++; 
+            } 
+        } 
+        return indices; 
+
+print(indices); 
+    } 

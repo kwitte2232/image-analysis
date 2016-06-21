@@ -1,0 +1,39 @@
+//This part sets up a folder in the home directory (for me: Users/Kristen) 
+//called "straight Snakes
+
+tmp = getDirectory("home");
+myDir = tmp+"Straight_Snakes"+File.separator;
+File.makeDirectory(myDir);
+  if (!File.exists(myDir))
+      exit("Unable to create directory");
+  print("");
+  print(myDir);
+
+//The for loop goes through the whole stack of frames
+for (n=1; n<=nSlices; n++) {
+	setSlice(n);
+	run("Snake to Roi");
+		//When the loop runs, you will have to re-choose the snake txt file 
+		//everytime. I make a copy at put it on the desktop and call it "CurrentSnake"
+		//to make it easy on myself
+	run("Interpolate", "interval=1");
+	run("Area to Line");
+	run("Straighten...", "line=6");
+		//My membrane is about 6 pixels wide, so you can change these as you need.
+		//A new window will open made of the line
+	selectWindow("Duplicate");
+		//Before I process my stack I make a duplicate copy of it and name it "Duplicate"
+		//This is the stack that you want to process
+	title = getSliceNumber();
+		//This defines the variable "title" as the current slice number in the stack "Duplicate"
+	selectWindow("Duplicate-1");
+		//This is the line window
+	saveAs("Tiff", myDir+title);
+		//This command saves the line window ("Duplicate-1") as a TIFF, with the title 
+		//being the slice number from "Duplicate", and saves it to the folder that was 
+		//created at the start
+	close();
+	selectWindow("Duplicate");
+		//Reselects the stack and goes through the for loop again
+}
+

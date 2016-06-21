@@ -1,0 +1,111 @@
+// FIND THE X,Y COORDINATES OF THE BUD NECK
+
+msg="Place a circle at the bud neck";
+waitForUser(msg + "\n" + "When finished, press OK");
+
+selectWindow("Nom");
+roiManager("Add");
+List.setMeasurements;
+//print(List.getList);
+budX=List.getValue("X");
+IJ.log("budX="+budX);
+budY=List.getValue("Y");
+IJ.log("budY="+budY);
+
+numScars=0;
+
+scars=getBoolean("Are there bud scars?");
+
+if(scars){
+	
+	do{
+		// FIND THE X,Y COORDINATES OF THE FIRST BUD SITE
+		numScars++;
+		selectWindow("Nom");
+		makeOval(0,0,10,10);
+		msg="Place the circle at the bud scar; adjust the size as needed";
+		waitForUser(msg + "\n" + "When finished, press OK");
+
+		selectWindow("Nom");
+		//roiManager("Add");
+		List.setMeasurements;
+		//print(List.getList);
+		firstX=List.getValue("X");
+		IJ.log("firstX="+firstX);
+		firstY=List.getValue("Y");
+		IJ.log("firstY="+firstY);
+		
+		// FIND THE DISTANCE BETWEEN THE BUD NECK AND THE BUD SITES
+
+		diffX=budX-firstX;
+		sqDiffX=diffX*diffX;
+		IJ.log("sqDiffX="+sqDiffX);
+		diffY=budY-firstY;
+		sqDiffY=diffY*diffY;
+		IJ.log("sqDiffY="+sqDiffY);
+		dist=sqrt(sqDiffX+sqDiffY);
+		IJ.log("dist="+dist);
+		waitForUser("check"); //DEBUGGING
+
+		setResult("Dist of Bud Scars", numScars-1, dist);
+
+		anotherScar=getBoolean("Is there another scar?");
+	} 	while (anotherScar);
+}
+
+updateResults();
+
+
+
+// FIND THE X,Y COORDINATES OF THE SECOND BUD SITE
+
+// msg="Place a circle at the first bud site";
+// waitForUser(msg + "\n" + "When finished, press OK");
+// 
+// selectWindow("Nom");
+// roiManager("Add");
+// List.setMeasurements;
+// print(List.getList);
+// secondX=List.getValue("X");
+// secondY=List.getValue("Y");
+// 
+// // FIND THE DISTANCE BETWEEN THE BUD NECK AND THE BUD SITES
+// 
+// diffX=budX-firstX;
+// sqDiffX=diffX*diffX;
+// IJ.log("sqDiffX="+sqDiffX);
+// diffY=budY-firstY;
+// sqDiffY=diffY*diffY;
+// IJ.log("sqDiffY="+sqDiffY);
+// dist=sqrt(diffX-diffY);
+// IJ.log("dist="+dist);
+// waitForUser("check");
+// 
+// // m=(diffY)/(diffX);
+// // b=budY-m*budX;
+// // IJ.log("m="+m);
+// // IJ.log("b="+b);
+// 
+// // top=firstY-m*firstX-b;
+// // bottom=m*m+1;
+// // dist=(abs(top))/(sqrt(bottom));
+// 
+// buds=2
+// 
+// setResult("Dist of First Bud", buds-2, dist);
+// 
+// diffX=budX-secondX;
+// diffY=budY-secondY;
+// m=(diffY)/(diffX); 
+// b=budY-m*budX;
+// IJ.log("m="+m);
+// IJ.log("b="+b);
+// 
+// top=secondY-m*secondX-b;
+// bottom=m*m+1;
+// dist=(abs(top))/(sqrt(bottom));
+// 
+// setResult("Dist of Second Bud", buds-1, dist);
+// 
+// updateResults();
+// saveAs("Results", tmp+"Results.xls");

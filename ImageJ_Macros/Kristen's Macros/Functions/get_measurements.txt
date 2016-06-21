@@ -1,0 +1,57 @@
+
+
+function get_cell_measurements(num_frames){
+  //num_frames = integer, number of frames in the stack
+
+
+  for (k = 1; k <= num_frames; k++){
+      setSlice(k);
+      List.setMeasurements;
+      int_den = List.getValue("IntDen");
+      mean = List.getValue("Mean");
+      area = List.getValue("Area");
+      setResult(image + " Area", k-1, area);
+      setResult(image + " Mean", k-1, mean);
+      setResult(image + " IntDen", k-1, int_den);
+  }
+
+}
+
+function get_bkgrd_measurements(){
+
+  List.setMeasurements;
+  int_den = List.getValue("IntDen");
+  mean = List.getValue("Mean");
+  area = List.getValue("Area");
+  setResult("Bkgrnd Area", 0, area);
+  setResult("Bkgrnd Mean", 0, mean);
+  setResult("Bkgrnd IntDen", 0, int_den);
+
+}
+
+function get_all_measurements(image, dir, cell_num){
+  //image = string, what image are you measuring
+  //dir = string, where to save the data
+  //cell_num = integer, what cell being processed
+
+  selectWindow(image);
+  num_frames = nSlices();
+  setSlice(1);
+  roiManager("select", 0);
+  get_cell_measurements(num_frames);
+
+  selectWindow(image);
+  setSlice(1);
+  roiManager("select", 1);
+  get_bkgrd_measurements();
+
+  updateResults();
+  saveAs("measurements", dir + image + "_" + cell_num +
+      "_intensities.csv");
+
+  if(isOpen("Results")){
+    selectWindow("Results"); //this may need to be what it was saved as
+    run("Close");
+  }
+
+}

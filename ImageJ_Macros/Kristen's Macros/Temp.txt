@@ -1,0 +1,43 @@
+// FUNCTIONS
+
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close(); 
+	}
+}
+
+waitForUser("Choose the directory of the images to be processed");
+folder = getDirectory("Choose a directory");
+open(folder+"Ave_mCh_Post.tif");
+open(folder+"Ave_mCh_Pre.tif");
+
+selectWindow("Ave_mCh_Pre.tif");
+List.setMeasurements
+//print(List.getList);
+min=List.getValue("Min");
+max=List.getValue("Max");
+IJ.log("min="+min);
+IJ.log("max="+max);
+
+selectWindow("Ave_mCh_Post.tif");
+setMinAndMax(min,max);
+List.setMeasurements
+//print(List.getList);
+min=List.getValue("Min");
+max=List.getValue("Max");
+IJ.log("min="+min);
+IJ.log("max="+max);
+title="Ave_mCh_Post";
+saveAs("Tiff", folder+title);
+
+imageCalculator("Subtract create", "Ave_mCh_Post.tif","Ave_mCh_Pre.tif");
+selectWindow("Result of Ave_mCh_Post.tif");
+title="Subtract_mCh";
+saveAs("Tiff", folder+title);
+run("Invert");
+run("unionjack");
+title="Subtract_mCh_UJ";
+saveAs("Tiff", folder+title);
+
+//closeAllImages();

@@ -1,0 +1,57 @@
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+proc=dir+"LowProcessImages"+File.separator;
+//File.makeDirectory(proc);
+
+// selectWindow("Targets01.stk");
+// frames=nSlices();
+// run("Duplicate...", "title=Targets duplicate range=1-["+frames+"]");
+// run("Duplicate...", "title=Targets01 duplicate range=1-["+frames+"]");
+
+selectWindow("Targets");
+
+frames=nSlices();
+run("Duplicate...", "title=Targets01 duplicate range=1-["+frames+"]");
+
+run("Find Edges", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+saveAs("Tiff", proc+"Targets01");
+
+selectWindow("Duplicate_mCherry")
+runMacro("BleachCorrection.txt");
+title="mCherry_BleachCorrection";
+saveAs("Tiff", proc+title);
+
+selectWindow("mCherry_BleachCorrection.tif");
+run("Duplicate...", "title=mCherry duplicate range=1-["+frames+"]");
+
+selectWindow("mCherry");
+
+run("8-bit");
+run("Merge Channels...", "c1=mCherry c2=Targets01 create keep");
+
+waitForUser("Adjust Brightness/Contrast");
+
+run("Stack to RGB", "slices");
+
+selectWindow("Composite");
+run("8-bit");
+
+run("MultiStackReg", "stack_1=Composite action_1=Align file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");
+	//Save the transformation matrix into "LowProcessImages" folder
+
+title="MultiStack_Merge";
+saveAs("Tiff", proc+title);
+
+trans=proc+"TransformationMatrices.txt";
+
+selectWindow("mCherry");
+run("MultiStackReg", "stack_1=mCherry action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"mCherry_Transform");
+
+
+selectWindow("Targets01");
+run("MultiStackReg", "stack_1=Targets action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"Targets_Transform");

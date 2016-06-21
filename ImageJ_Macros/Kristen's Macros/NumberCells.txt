@@ -1,0 +1,24 @@
+selectWindow("CellNumber_Stack");
+frames=nSlices();
+makeOval(0,0,15,15);
+setSlice(1);
+waitForUser("position roi on cell");
+
+for(i=1; i<=frames; i++){
+	selectWindow("CellNumber_Stack");
+	setSlice(i);
+	getSelectionBounds(x, y, width, height);
+	xText=x+2;
+	yText=y+15;
+	setColor(255,255,255);
+	setFont("SansSerif" , 12, "antialiased");
+	drawString(15, xText, yText);
+	}
+	
+	
+selectWindow("Duplicate");	
+makeOval(0,0,15,15);	
+waitForUser("position roi on cell");
+setColor(255,255,255);
+setFont("SansSerif" , 12, "antialiased");
+drawString(1, xText, yText);

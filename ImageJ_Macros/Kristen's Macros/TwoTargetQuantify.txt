@@ -1,0 +1,144 @@
+roiManager("reset");
+
+selectWindow("Duplicate");
+run("In");
+run("In");
+run("In");
+
+waitForUser("Draw a rectangle to block out the center points");
+
+selectWindow("Duplicate");
+frames=nSlices();
+
+for(i=1; i<=frames; i++){
+	selectWindow("Duplicate");
+	setSlice(i);
+	setColor("black");
+	fill();
+}
+
+centers=getBoolean("Do you need another rectangle?"); 
+	if (centers) {
+		do {
+			waitForUser("Draw a rectangle to block out the center points");
+			for(i=1; i<=frames; i++){
+				selectWindow("Duplicate");
+				setSlice(i);
+				setColor("black");
+				fill();
+			}
+			anotherCenter=getBoolean("hit no");
+		}	while (anotherCenter);
+	}
+
+waitForUser("check"); //DEBUGGING
+
+setBatchMode(true);
+
+for(i=1; i<=frames; i++){
+	selectWindow("Duplicate");
+	setSlice(i);
+	resetThreshold();
+	setAutoThreshold("Default dark");
+	run("Threshold...");
+	run("Create Selection");
+	List.setMeasurements;
+	x=List.getValue("X");
+	y=List.getValue("Y");
+	
+	selectWindow("Duplicate_mCherry");
+	setSlice(i);
+	// run("Restore Selection");
+// 	run("Enlarge...", 5);
+	makeOval(x-5,y-5,10,10);
+	roiManager("Add");
+	List.setMeasurements;
+	maxInt=List.getValue("Max");
+	setResult("1st Target Max", i-1, maxInt);
+	}
+
+setBatchMode(false);
+
+updateResults();
+
+secondSite=getBoolean("Measure the second target site. Hit yes");
+	if (secondSite) {
+		do {
+			selectWindow("Duplicate_2");
+			run("In");
+			run("In");
+			run("In");
+			waitForUser("Draw a rectangle to block out the center points");
+			setBatchMode(true);
+			selectWindow("Duplicate_2");
+			frames=nSlices();
+
+			for(i=1; i<=frames; i++){
+				selectWindow("Duplicate_2");
+				setSlice(i);
+				setColor("black");
+				fill();
+			}
+
+			centers=getBoolean("Do you need another rectangle?"); 
+			if (centers) {
+				do {
+					waitForUser("Draw a rectangle to block out the center points");
+					for(i=1; i<=frames; i++){
+						selectWindow("Duplicate_2");
+						setSlice(i);
+						setColor("black");
+						fill();
+					}
+				anotherTarget=getBoolean("hit no");
+				}	while (anotherTarget);
+			}
+	
+			waitForUser("check"); //DEBUGGING
+
+			for(i=1; i<=frames; i++){
+				selectWindow("Duplicate_2");
+				setSlice(i);
+				resetThreshold();
+				setAutoThreshold("Default dark");
+				run("Threshold...");
+				run("Create Selection");
+				List.setMeasurements;
+				x=List.getValue("X");
+				y=List.getValue("Y");
+	
+				selectWindow("Duplicate_mCherry");
+				setSlice(i);
+				// run("Restore Selection");
+			// 	run("Enlarge...", 5);
+				makeOval(x-5,y-5,10,10);
+				roiManager("Add");
+				List.setMeasurements;
+				maxInt=List.getValue("Max");
+				setResult("2nd Target Max", i-1, maxInt);
+			}
+			setBatchMode(false);
+			anotherCenter=getBoolean("hit no");
+		} while (anotherCenter);
+	} 
+
+selectWindow("Duplicate_mCherry");
+run("In");
+run("In");
+run("In");
+makeOval(0,0,10,10);
+waitForUser("Move the target to a background position on the cell");
+
+for(i=1; i<=frames; i++){
+	selectWindow("Duplicate_mCherry");
+	setSlice(i);
+	// run("Restore Selection");
+	// 	run("Enlarge...", 5);
+	List.setMeasurements;
+	maxInt=List.getValue("Max");
+	setResult("Background", i-1, maxInt);
+	}
+
+updateResults();
+
+

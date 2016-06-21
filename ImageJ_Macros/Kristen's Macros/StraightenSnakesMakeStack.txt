@@ -1,0 +1,6 @@
+run("Snake to Roi");
+run("Interpolate", "interval=1");
+run("Area to Line");
+run("Straighten...", "line=6");
+run("Images to Stack", "name=Stack title=[] use keep");
+selectWindow("Stack");

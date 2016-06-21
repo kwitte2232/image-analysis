@@ -1,0 +1,49 @@
+setBatchMode(true);
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+proc=dir+"LowProcessImages"+File.separator;
+// File.makeDirectory(imgDir);
+//   if (!File.exists(imgDir))
+//       exit("Unable to create directory");
+
+open(proc+"mCherry_Transform.tif");
+frames=nSlices();
+run("Duplicate...", "title=mCherry duplicate range=1-["+frames+"]");
+
+open(proc+"Targets_Transform.tif");
+run("Duplicate...", "title=Targets duplicate range=1-["+frames+"]");
+
+selectWindow("mCherry");
+run("8-bit");
+run("Combine...", "stack1=mCherry stack2=Targets");
+
+title="Combine_mCherry_Targets";
+saveAs("Tiff", proc+title);
+
+setBatchMode(false);
+
+
+
+// 
+// 
+// selectWindow("mChStack01.stk");
+// frames=nSlices();
+// run("Duplicate...", "title=mChStack01-1.stk duplicate range=1-["+frames+"]");
+// selectWindow("Targets");
+// run("Duplicate...", "title=Targets01-1 duplicate range=1-["+frames+"]");
+// 
+// selectWindow("mChStack01-1.stk");
+// runMacro("BleachCorrection.txt");
+// title="mCherry_BleachCorrection";
+// saveAs("Tiff", imgDir+title);
+// 
+// selectWindow("mCherry_BleachCorrection.tif");
+// run("Duplicate...", "title=mCherry_BleachCorrection-1.tif duplicate range=1-["+frames+"]");
+// selectWindow("mCherry_BleachCorrection-1.tif");
+// run("8-bit");
+// run("Combine...", "stack1=mCherry_BleachCorrection-1.tif stack2=Targets01-1");
+// 
+// title="Combine_mCherry_Targets";
+// saveAs("Tiff", imgDir+title);
+// 
+// setBatchMode(false);

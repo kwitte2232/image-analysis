@@ -1,0 +1,24 @@
+for (n=1; n<=nSlices; n++) {
+	setSlice(n);
+	if (n==1) {
+			title = "Montage";
+			IJ.log("title: " + title);
+		} else {
+			title = "NextRow";
+		}
+	run("Snake to Roi");
+		//When the loop runs, you will have to re-choose the snake txt file 
+		//everytime. I make a copy at put it on the desktop and call it "CurrentSnake"
+		//to make it easy on myself
+	run("Interpolate", "interval=1");
+	run("Area to Line");
+	run("Straighten...", "line=6");
+		//My membrane is about 6 pixels wide, so you can change these as you need.
+	rename(title);
+		if (title=="NextRow") {
+			run("Combine...", "stack1=Montage stack2=NextRow combine");
+			}
+	rename("Montage");
+	selectWindow("Duplicate");
+		//Reselects the stack and goes through the for loop again
+}
