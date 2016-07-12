@@ -8,15 +8,13 @@
 
 //FUNCTIONS
 function closeAllImages()	{
-  '''
-  Closes all images
 
-  Inputs:
-    None
-  Returns:
-    None
-  '''
+  // Closes all images
 
+  //Inputs:
+    //None
+  //Returns:
+    //None
   while (nImages>0) {
 		selectImage(nImages);
 		close();
@@ -24,19 +22,18 @@ function closeAllImages()	{
 }
 
 function centerImage(width, height, frames) {
-  '''
-  Makes a new binary image and changes the pixel
-  at the center of the cell to white.
 
-  Inputs:
-    width, integer, desired width in pixels of the new image
-    height, integer, desired height in pixels of the new image
-    frames, integer, desired number of frames of the new image
-      *if more than one will generate a stack
+  // Makes a new binary image and changes the pixel
+  //at the center of the cell to white.
 
-  Returns:
-    None
-  '''
+  //Inputs:
+    //width, integer, desired width in pixels of the new image
+    //height, integer, desired height in pixels of the new image
+    //frames, integer, desired number of frames of the new image
+      //*if more than one will generate a stack
+
+  //Returns:
+    //None
 
   newImage("Untitled", "8-bit Black", width, height, frames);
   selectWindow("Untitled");
@@ -65,7 +62,7 @@ print("num_cells.length: " + num_cells.length);
 //printArray(num_cells);
 
 count = 0;
-for (i = 0; i < num_cells.length; i++){
+for (i = 0; i < num_cells.length-1; i++){
   roiManager("Reset");
   curr_cell = num_cells[i];
   print("curr_cell: " + curr_cell);
