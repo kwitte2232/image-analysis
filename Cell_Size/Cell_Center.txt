@@ -1,0 +1,96 @@
+// This script loops through all of the cell folders within
+//a processedImages directory and opens the Targets_crop.tif image.
+//User then moves an auto-generated ROI to the center of the cell and
+//a second binary image is generated that has the center of the cell
+//as a white pixel. Saves this image as Cell_Center.tif within the
+//cell folder.
+
+
+//FUNCTIONS
+function closeAllImages()	{
+  '''
+  Closes all images
+
+  Inputs:
+    None
+  Returns:
+    None
+  '''
+
+  while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+function centerImage(width, height, frames) {
+  '''
+  Makes a new binary image and changes the pixel
+  at the center of the cell to white.
+
+  Inputs:
+    width, integer, desired width in pixels of the new image
+    height, integer, desired height in pixels of the new image
+    frames, integer, desired number of frames of the new image
+      *if more than one will generate a stack
+
+  Returns:
+    None
+  '''
+
+  newImage("Untitled", "8-bit Black", width, height, frames);
+  selectWindow("Untitled");
+
+  roiManager("Select", 0);
+  List.setMeasurements;
+  centerX=List.getValue("X");
+  centerY=List.getValue("Y");
+  pixel=getPixel(centerX, centerY);
+  for (n=1; n<=frames; n++) {
+    setSlice(n);
+	  makeRectangle(centerX, centerY,1,1);
+	  setColor("white");
+	  fill();
+  }
+}
+
+//PROCESSING
+
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+IJ.log("dir: " + dir);
+
+num_cells = getFileList(dir);
+print("num_cells.length: " + num_cells.length);
+//printArray(num_cells);
+
+count = 0;
+for (i = 0; i < num_cells.length; i++){
+  roiManager("Reset");
+  curr_cell = num_cells[i];
+  print("curr_cell: " + curr_cell);
+
+  curr_cell_dir = dir + curr_cell;
+  curr_targets = curr_cell_dir + "Targets_crop.tif";
+  open(curr_targets);
+  selectWindow("Targets_crop.tif");
+  getDimensions(w, h , channels, slices, frames);
+  run("Duplicate...", "title=Targets duplicate range=1-["+frames+"]");
+
+  selectWindow("Targets");
+  makeOval(0,0,5,5);
+  run("In [+]");
+  run("In [+]");
+  run("In [+]");
+
+  msg = "Place circle in center of the bud";
+  waitForUser(msg + "\n" + "When finished, press OK");
+
+  roiManager("Add");
+  centerImage(w, h, frames);
+
+  selectWindow("Untitled");
+  saveAs("Tiff", curr_cell_dir+"Cell_Center");
+
+  closeAllImages();
+}
