@@ -1,0 +1,103 @@
+'''
+Kristen Witte
+Glotzer Lab
+BudScar_Clustering_Index.txt
+
+This macro uses a nearest-neigbhor measurement to output a clustering index for bud scars.
+
+Requirements/Inputs:
+A folder of cells derived from a Cropper.txt derivative. The BudScars.tif image will be
+from calcoflour-stained bud scars acquired using z-projection and dapi filter.  
+
+Dependencies:
+None
+
+Outputs:
+An image with the centroids of the ROIs highlighted and a "Nearest-Neighbor" measurement
+'''
+
+//BUD CLUSTERING INDEX MACRO
+
+procDir=getDirectory("Choose a directory");
+print(procDir);
+
+list=getFileList(procDir);
+
+for(i=0; i<=list.length-1; i++) {
+	curCell=procDir+list[i];
+	//cellList=getFileList(curCell);
+	open(curCell+"BudScars.tif");
+	run("Duplicate...", "title=Duplicate");
+	selectWindow("Duplicate");
+	getDimensions(width, height, channels, slices, frames);
+
+	newImage("Untitled", "8-bit White", width, height, frames);
+	selectWindow("Untitled");
+
+	roiManager("Reset");
+
+	numScars=0;
+	
+	selectWindow("Duplicate");
+	run("In");
+	run("In");
+	run("In");
+	makeOval(0,0,14,14);
+
+	scars=getBoolean("Are there bud scars?");
+
+	if(scars){
+	
+		do{
+			numScars++;
+			selectWindow("Duplicate");
+			waitForUser("Place the circle on the bud scar");
+			roiManager("Add");
+			count=roiManager("count");
+			j=numScars-1;
+        	selectWindow("Untitled");
+        	roiManager("Select", j);
+			//run("Add Selection...");
+			List.setMeasurements;
+			centerX=List.getValue("X");
+			centerY=List.getValue("Y");
+			pixel=getPixel(centerX, centerY);
+			makeRectangle(centerX, centerY,1,1);
+			setColor("black");
+			fill();
+	
+			anotherScar=getBoolean("Is there another scar?");
+		} 	while (anotherScar);
+	}
+
+	selectWindow("Untitled");
+	run("Select None");
+	//waitForUser("Debugging");
+
+	run("Set Measurements...", "centroid");
+	number=i+1;
+	selectWindow("Untitled");
+	run("Analyze Particles...", "size=0-Infinity circularity=0.00-1.00 show=Outlines display summarize record");
+	selectWindow("Untitled");
+	run("Nnd ");
+	selectWindow("Nearest Neighbor Distances");
+	saveAs("measurements", curCell+"Cell_"+number+"_Nnd.txt");
+	selectWindow("Untitled");
+	saveAs("Tiff", curCell+"Centroid_"+number+".tif");
+	selectWindow("Results");
+	run("Close");
+	selectWindow("Cell_+"number+"_Nnd.txt");
+	run("Close");
+	selectWindow("Summary");
+	run("Close");
+	closeAllImages();
+}
+
+	// FUNCTIONS
+
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close(); 
+	}
+}

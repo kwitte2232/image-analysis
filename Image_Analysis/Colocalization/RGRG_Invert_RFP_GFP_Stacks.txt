@@ -1,0 +1,66 @@
+'''
+Kristen Witte
+Glotzer Lab
+RGRG_Invert_RFP_GFP_Stacks.txt
+
+This macro primarily inverts an RFP and GFP stack. The images are derived from an experiment
+where the user acquires 4 images in either Red-Green-Red-Green order or vice versa. My shorthand
+for that type of experiment was RGRG.
+
+Requirements/Inputs:
+Root Directory:
+	>GFP01.tif
+	>GFP02.tif
+	>Nom.tif
+	>RFP01.tif
+	>RFP02.tif
+
+Dependencies:
+None
+
+Outputs:
+Four stacks, both a white on black and a black on white of RFP and GFP
+'''
+//FUNCTIONS
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+
+
+dir=getDirectory("Choose a directory");
+print(dir);
+
+expts = getFileList(dir);
+
+for (i = 0; i < expts.length; i++){
+  curr_expt = expts[i];
+  print("curr_expt: " + curr_expt);
+  data = dir + curr_expt;
+  images = getFileList(data);
+  open(data+images[3]); //Edit the number for this as necessary
+  open(data+images[4]);
+
+  run("Images to Stack", "name=RFP title=[] use");
+  saveAs("Tiff", data+"RFP_Stack");
+
+  open(data+images[0]);
+  open(data+images[1]);
+
+  run("Images to Stack", "name=GFP title=[] use");
+  saveAs("Tiff", data+"GFP_Stack");
+
+  selectWindow("RFP_Stack.tif");
+  run("Invert", "stack");
+  saveAs("Tiff", data+"RFP_Stack_Invert");
+
+  selectWindow("GFP_Stack.tif");
+  run("Invert", "stack");
+  saveAs("Tiff", data+"GFP_Stack_Invert");
+
+  closeAllImages();
+}

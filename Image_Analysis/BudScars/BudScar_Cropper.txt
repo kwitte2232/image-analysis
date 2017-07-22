@@ -1,0 +1,117 @@
+'''
+Kristen Witte
+Glotzer Lab
+BudScar_Cropper.txt
+
+CROPPER FOR BUD CLUSTERING INDEX
+
+Requirements/Inputs:
+A folder of a bud scar images that has undergone max-intensity z-projection.  
+
+Dependencies:
+None
+
+Outputs:
+A folder of cells that have been cropped.
+'''
+
+
+dir=getDirectory("Choose a directory");
+print(dir);
+
+list=getFileList(dir);
+
+procDir=dir+"processedImages/";
+	File.makeDirectory(procDir);
+
+counter=0;
+
+for(i=0; i<=list.length-1; i++) {
+	open(dir+list[i]);
+	frames=nSlices();
+	run("Duplicate...", "title=Duplicate");
+	selectWindow("Duplicate");
+	run("Duplicate...", "title=temp");
+
+	// CROP CELLS
+
+	//cropCells = getBoolean("Would you like to crop any fields in this directory?");
+
+	//if (cropCells) {
+		
+		setBatchMode(true);
+		
+		selectWindow("Duplicate");
+		name=getTitle();
+		selectWindow("temp");
+		run("8-bit");
+		rename(name+"_thumb.tif");	
+		setBatchMode(false);
+		setLocation(50, 50);
+
+		selectWindow("Duplicate");
+		//run("Enhance Contrast", "saturated=0.5");
+//		cropThis = getBoolean("Would you like to crop any cells in this stack?");
+		
+//		if (cropThis)	{
+			numCrops=0;
+			
+			do	{
+				selectWindow(name+"_thumb.tif");
+				if (numCrops==0)	{
+					makeRectangle(1, 1, 75, 75);
+				}
+				waitForUser("Move or resize the ROI and click OK.");
+				numCrops++;
+				cellDir=procDir+"/Cell_"+numCrops+File.separator;
+				File.makeDirectory(cellDir);
+				run("Colors...", "foreground=white background=white selection=yellow");
+				run("Draw");
+				getSelectionBounds(x, y, width, height);
+				xText=x+2;
+				yText=y+15;
+				setColor(255,255,255);
+				setFont("SansSerif" , 12, "antialiased");
+				drawString(numCrops, xText, yText);
+				saveAs("Tiff", dir+name+"_thumb.tif");
+				
+				//FOR EACH CHANNEL THAT YOU WANT TO CROP, REPEAT THE BLOCK OF CODE CALLED "CHANNEL CROP"
+					//ALTER SELECTWINDOW() COMMAND AND NAME VARIABLES AS NEEDED
+				
+				//BEGIN "CHANNEL CROP"
+				selectWindow("Duplicate");
+				run("Restore Selection");
+				run("Duplicate...", "title=temp duplicate");
+				saveAs("Tiff", cellDir+"BudScars.tif");
+				//if (numCrops <= 9)
+				//	saveAs("Tiff", cellDir+"BudScars"+counter+"0"+numCrops+".tif");
+				//else
+				//	saveAs("Tiff", cellDir+"BudScars"+counter+numCrops+".tif");
+				
+				close();
+				
+				anotherCrop=getBoolean("Would you like to crop another cell in this stack?");
+			}	while (anotherCrop);
+			
+			selectWindow(name+"_thumb.tif");
+			saveAs("Tiff", procDir+name+"_thumb.tif");
+			closeAllImages();
+//		}
+//	}
+	counter++;
+}
+
+
+setBatchMode(false);
+
+// END CROP CELLS
+
+
+// FUNCTIONS
+
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close(); 
+	}
+}

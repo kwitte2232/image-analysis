@@ -1,0 +1,129 @@
+'''
+Kristen Witte
+Glotzer Lab
+Extract_Target_vs_PrevBud_Angle.txt
+
+Uses the kymographic data derived from Membrane_HeatMap_Kymos.txt to determine the 
+angle between target and previous bud site of each individual cell in an entire folder 
+(processedImages/) of cells. Effectively the same as "Extract_Polarization_Efficiency_Angle.txt."
+Would be a useful as a skills development goal to combine those two macros, as I ran out of
+time to do that.
+
+Requirements/Inputs:
+Output from Membrane_HeatMap_Kymos.txt
+
+Dependencies:
+None
+
+Outputs:
+A csv file entitled "targets_vs_prev_bud.csv" that catalogs the Pixel Difference, Degrees,
+and Radians for each cell. 
+'''
+
+
+//Prints the array in a human-readable form
+function printArray(array) {
+    string="";
+    for (i=0; i<lengthOf(array); i++) {
+        if (i==0) {
+            string=string+array[i];
+        } else {
+            string=string+", "+array[i];
+        }
+    }
+    print(string);
+}
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+num_cells = getFileList(dir);
+
+count = 0;
+for (i = 0; i < num_cells.length; i++){
+  curr_cell = num_cells[i];
+  //print("curr_cell: " + curr_cell);
+  all_files = getFileList(dir + curr_cell);
+  //printArray(all_files);
+  for (j=0; j<all_files.length; j++){
+	curr_file = all_files[j];
+	//print(curr_file);
+	if (curr_file == "MotherCell/"){
+		count = analyze_data(dir, curr_cell, curr_file, count);
+	}
+  }
+}
+//selectWindow("Results");
+saveAs("measurements", dir + "targets_vs_prev_bud.csv");
+if(isOpen("Results")){
+	selectWindow("Results");
+	run("Close");
+}
+
+selectWindow("Log");
+saveAs("text", dir + "Log.txt");
+
+function analyze_data(proc_dir, curr_cell, curr_file, count){
+  roiManager("Reset");
+  data = proc_dir + curr_cell + curr_file;
+  data_list = getFileList(data);
+  if (data_list.length > 2){
+    end = lengthOf(curr_cell) - 1;
+    new_string = substring(curr_cell, 5, end);
+    number = parseFloat(new_string);
+    setResult("Cell", count, number);
+
+    open(data + "GFP_Montage.tif");
+    open(data + "Prev_Bud.tif");
+
+    selectWindow("GFP_Montage.tif");
+    run("Duplicate...", "title=Targets duplicate");
+    selectWindow("Prev_Bud.tif");
+    run("Duplicate...", "title=Prev duplicate");
+
+    selectWindow("Prev");
+    run("Threshold...");
+    run("Create Selection");
+    List.setMeasurements;
+    budX=List.getValue("X");
+    budY=List.getValue("Y");
+    setResult("BudX", count, budX);
+    setResult("BudY", count, budY);
+
+	selectWindow("Targets");
+    makeRectangle(0,0,100,30);
+    run("Duplicate...", "title=Target_Crop duplicate");
+    selectWindow("Target_Crop");
+    List.setMeasurements;
+    mean = List.getValue("Mean");
+    if (mean > 0){
+      run("Threshold...");
+      run("Create Selection");
+      List.setMeasurements;
+      targetX=List.getValue("X");
+      setResult("TargetX", count, targetX);
+
+      pi = PI;
+      pixel_diff = abs(targetX - budX);
+      degrees_diff = pixel_diff*3.6;
+      radians_diff = degrees_diff*(pi/180);
+      setResult("Pixel Diff", count, pixel_diff);
+      setResult("Degrees", count, degrees_diff);
+      setResult("Radians", count, radians_diff);
+    } else {
+      IJ.log("curr_cell: " + curr_cell);
+      IJ.log("No Targets found");
+    }
+    updateResults();
+    closeAllImages();
+    count++;
+  }
+  return count
+}

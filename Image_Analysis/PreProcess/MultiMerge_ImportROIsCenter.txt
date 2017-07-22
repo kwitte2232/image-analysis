@@ -1,0 +1,202 @@
+'''
+MultiMerge_ImportROIsCenter.txt
+Kristen Witte
+Glotzer Lab
+
+This macro pre-processing a series of images derived from experiments
+that utilize micropoint targeting in optogenetic experiments.
+
+Requirements/Inputs:
+1) Directory Setup:
+Root Directory
+  >GFP0X.tif
+  >mChStack_0X.stk
+  >NomStack0X.stk
+  >Targets0X.stk
+  >Regions0X
+    >.rgn Files
+
+2) Line #114 (rgn=dir+"Regions01"+File.separator) reflects the "X" in
+point 1. In this instance X=1. If X != 1, then change that line to reflect the
+value.
+
+Dependencies:
+1) Plugins:
+  >Metamorph nd & ROI files importer (nd stack builder)
+    ** This plugin imports the .rgn files from Metamorph
+  >MultiStackReg
+    ** This is a different plugin than StackReg, which comes pre-loaded to FIJI
+2) Macros:
+  >BleachCorrection.txt
+    ** must be intalled in the Macros folder of ImageJ
+
+Outputs:
+The final output is a new directory within the Root Directory called
+"LowProcessImages."
+LowProcessImages
+  >CenterPoints_Transform.tif --> binary image delineating the center of each
+  region. Has also undergone registration correction
+  >CenterPoints.tif --> binary image delineating the center of each
+  region.
+  >Combine_mCherry_Targets --> image to visualize targts and mcherry at the
+  same time
+  >Edges_Target_Transform.tif --> Edge detection from the original target image.
+  Has also undergone registration correction.
+  >Edges_Target.tif --> Edge detection from the original target image.
+  >mCherry_BleachCorrection.tif --> bleach corrected image
+  >mCherry_Transform.tif --> registration-corrected after bleach correction
+  >MultiStack_Merge.tif --> combined mcherry and targets image to template the
+  registration correction. The combined image is critically for an accurate
+  registration
+  >Nom_Transform.tif --> Edge detection from the original nomarski image.
+  Has also undergone registration correction.
+  >Targets_Transform.tif --> registration-corrected targets image.
+  >TransformationMatrices.txt --> File generated from MultiStackReg that
+  translates the registration coordiantes to other images.
+'''
+
+//FUNCTIONS
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+proc=dir+"LowProcessImages"+File.separator;
+File.makeDirectory(proc);
+
+files = getFileList(dir)
+open(dir + files[2]);
+run("Duplicate...", "title=Duplicate_mCherry duplicate");
+
+open(dir + files[3]);
+run("Duplicate...", "title=Nom duplicate");
+open(dir + files[5]);
+run("Duplicate...", "title=Targets duplicate");
+
+selectWindow("Duplicate_mCherry");
+frames=nSlices();
+runMacro("BleachCorrection.txt");
+title="mCherry_BleachCorrection";
+saveAs("Tiff", proc+title);
+
+selectWindow("mCherry_BleachCorrection.tif");
+run("Duplicate...", "title=mCherry duplicate range=1-["+frames+"]");
+
+selectWindow("Targets");
+run("Grays");
+run("Duplicate...", "title=Edges_Target duplicate range=1-["+frames+"]");
+
+run("Find Edges", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+saveAs("Tiff", proc+"Edges_Target");
+
+selectWindow("Nom");
+run("Grays");
+run("Duplicate...", "title=Nom_Transform duplicate range=1-["+frames+"]");
+
+run("Find Edges", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+run("Smooth", "stack");
+saveAs("Tiff", proc+"Nom_Transform");
+
+selectWindow("mCherry");
+
+run("8-bit");
+run("Merge Channels...", "c1=mCherry c2=Edges_Target.tif create keep");
+waitForUser("Adjust Brightness/Contrast");
+
+run("Stack to RGB", "slices");
+
+selectWindow("Composite");
+run("8-bit");
+
+run("MultiStackReg", "stack_1=Composite action_1=Align file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");
+	//Save the transformation matrix into "LowProcessImages" folder
+
+title="MultiStack_Merge";
+saveAs("Tiff", proc+title);
+
+trans=proc+"TransformationMatrices.txt";
+
+selectWindow("mCherry_BleachCorrection.tif");
+run("Duplicate...", "title=mCherry_Transform duplicate range=1-["+frames+"]");
+run("MultiStackReg", "stack_1=mCherry_Transform action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"mCherry_Transform");
+
+
+selectWindow("Targets");
+run("MultiStackReg", "stack_1=Targets action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"Targets_Transform");
+
+selectWindow("Edges_Target.tif");
+run("MultiStackReg", "stack_1=Edges_Target.tif action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"Edges_Target_Transform");
+
+selectWindow("Nom_Transform.tif");
+run("MultiStackReg", "stack_1=Nom_Transform.tif action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"Nom_Transform");
+
+//IMPORTROIS_CENTERPOINTS
+
+rgn=dir+"Regions01"+File.separator;
+list=getFileList(rgn);
+
+newImage("Untitled", "8-bit Black", 512, 512, frames);
+selectWindow("Untitled");
+frames=nSlices();
+
+for (n=1; n<=frames; n++) {
+    roiManager("Reset");
+	  setSlice(n);
+    title=n;
+    i=n-1;
+    region=list[i];
+   	run("Metamorph ROI", "open=["+rgn+region+"]");
+    count=roiManager("count");
+    //waitForUser("Debugging");
+    for (j=0; j<count; j++) {
+        roiManager("Select", j);
+		    List.setMeasurements;
+		    centerX=List.getValue("X");
+		    centerY=List.getValue("Y");
+		    pixel=getPixel(centerX, centerY);
+		    makeRectangle(centerX, centerY,1,1);
+		    setColor("white");
+		    fill();
+	    }
+	    selectWindow("Untitled");
+}
+
+selectWindow("Untitled");
+saveAs("Tiff", proc+"CenterPoints");
+selectWindow("CenterPoints.tif");
+run("MultiStackReg", "stack_1=CenterPoints.tif action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"CenterPoints_Transform");
+
+setBatchMode(true);
+open(proc+"mCherry_Transform.tif");
+frames=nSlices();
+run("Duplicate...", "title=mCherry duplicate range=1-["+frames+"]");
+
+open(proc+"Targets_Transform.tif");
+run("Duplicate...", "title=Targets duplicate range=1-["+frames+"]");
+
+selectWindow("mCherry");
+run("8-bit");
+run("Combine...", "stack1=mCherry stack2=Targets");
+
+title="Combine_mCherry_Targets";
+saveAs("Tiff", proc+title);
+
+closeAllImages();
+
+setBatchMode(false);

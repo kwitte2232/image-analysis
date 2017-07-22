@@ -1,0 +1,31 @@
+'''
+Kristen Witte
+Glotzer Lab
+make_lines_on_montages.txt
+
+This macro makes vertical lines on a montage of 75x75pixel images. Used to build
+panels for figures. Run this when you have your image exactly as you want it.
+
+Requirements:
+1) An open montage image
+
+Dependencies:
+None
+
+Ouput:
+An RGB image that should be saved exactly as is.
+'''
+
+lines=10;
+x=75;
+space=75;
+
+for(i=1; i<=lines; i++){
+	selectWindow("white");
+	makeLine(x,0,x,75);
+	run("Add Selection...");
+	run("Overlay Options...", "stroke=black width=0 apply");
+	x=x+space;
+	}
+
+run("Flatten");

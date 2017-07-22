@@ -1,0 +1,356 @@
+waitForUser("Choose the current cell folder");
+tmp=getDirectory("Choose a Directory");
+
+//waitForUser("Choose the directory containing your Snakes file.");
+dir=tmp+"Current Snake"+File.separator;
+IJ.log(dir);
+traces=getFileList(dir);
+//IJ.log(traces[0]);
+selectWindow("Duplicate");
+frames=nSlices();
+getDimensions(width, height,channels, slices, frames);
+f=nSlices();
+r=nResults();
+cellNumber=newArray(f+1);
+numRows=0;
+distRows=0;
+
+msg="Choose the x,y coordinate of the bud site by drawing a circle around the emerging bud in the first frame visible.";
+waitForUser(msg + "\n" + "When finished, press OK");
+selectWindow("Duplicate");
+budEmerge=getSliceNumber();
+//selectWindow("Duplicate_GFP");
+//run("Restore Selection");
+//setSlice(budEmerge);
+
+setResult("Bud Emergence", 0, budEmerge);
+selectWindow("Duplicate");
+roiManager("Add");
+List.setMeasurements;
+//print(List.getList);
+budX=List.getValue("X");
+budY=List.getValue("Y");
+setResult("BudX", 0, budX);
+setResult("BudY", 0, budY);
+
+//IMPORT THE MOTHER CELL SNAKES
+waitForUser("debugging");
+
+selectWindow("Duplicate");
+
+for (n=1; n<=f; n++) {
+	selectWindow("Duplicate");
+	setSlice(n);
+	cellNumber[n]=n;
+	IJ.log("n=" + n);
+	badPts=0;
+			
+		for (i=0; i<traces.length; i++) {
+			IJ.log("traces=" + traces.length);
+			string=File.openAsString(dir + traces[i]);
+			rows=split(string, "\n");
+			IJ.log("#rows=" + rows.length);
+			counter=0;
+		
+			for(j=0; j<rows.length; j++){
+				column=split(rows[j], "\t");
+			
+				if (column[0]==n) {
+					counter++;	
+					//counter is equal to the number of points in the snake for 
+						//that specific frame	
+				}
+			}
+			
+			IJ.log("numRows=" + numRows);
+			IJ.log("counter=" + counter);
+			x=newArray(rows.length);
+			y=newArray(rows.length);
+			distTmp=newArray(rows.length);
+			xcoordTmp=newArray(counter);
+			ycoordTmp=newArray(counter);
+			
+			//rows is equal to the sum total of all the points for all the frames
+			
+			//ADD THE SNAKE ROIS, DEFINE THE CENTER, AND DRAW A LINE FROM BUD TO OPP SIDE
+		
+			for(j=numRows; j<rows.length; j++){
+				// numRows = 0 to start, rows.length is the total number of points
+				column=split(rows[j], "\t");
+				//split the rows into an array with each column as an element
+				
+				if (column[0]==n) { 
+					x[j]=parseFloat(column[2]);
+					y[j]=parseFloat(column[3]);
+					numRows++;
+					IJ.log("numRows="+numRows);
+					IJ.log("x[j]="+x[j]);
+					//waitForUser("Check");
+ 				}
+ 			}
+ 				
+ 			if (n>1) {
+ 				start=numRows-counter;
+ 				// start is the position within rows.length that a given frame begins 
+ 					// its xy coordinates. numRows increases with each successive pass
+ 					// through the loop. One pass through the loop is one frame.
+ 					// At the end numRows will be equal to rows.length
+ 			} else {
+ 				start=0;
+ 			}
+ 				
+ 			IJ.log("start=" + start);
+ 			xcoordTmp=Array.slice(x, start, numRows);
+			ycoordTmp=Array.slice(y, start, numRows);
+			// Array.slice extracts part of an array. x is which array, start is the
+				// first element to extract, numRows is the last element to extract
+			// All this is doing is pulling out each individual x, y coordinate and adding
+				// it to an x-coordinate array and then a y-coordinate array
+ 			
+ 			makeSelection("polyline", xcoordTmp, ycoordTmp);
+			run("Interpolate", "interval=1");
+			run("Line to Area");
+			List.setMeasurements;
+			cellX=List.getValue("X");
+			// cellX = x coordinate center of the ROI
+			cellY=List.getValue("Y");
+			// cellY = y coordinate center of the ROI
+			IJ.log("cellX="+cellX+"\n"+"cellY="+cellY);
+			//Use the x-coordinate array and the y-coordinate array to plot a polyline
+			// Convert to an Area ROI to find the center 
+			
+			diffX=cellX-budX;
+			diffY=cellY-budY;
+			m=(diffY)/(diffX);
+			IJ.log("m="+m);
+			b=budY-m*budX;
+			IJ.log("b="+b);
+			// Find the slope of the line and the y-intercept from the center of the ROI
+				// to the site of bud emergence. Will be used to rearrange the start and
+				// end points of the x and y coordinate arrays. 
+			
+			
+			//FIND THE DISTANCES FROM THE LINE TO POINTS OF THE SNAKE THAT ARE OPP THE BUD
+				// The we only want to know the shortest distance from point to a line
+					// on the side that is opposite the bud because the line goes the
+					// entire way through the cell. Cut the cell in half, and only 
+					// measure the distances on the side the half without the bud
+				//distTmp is the size of rows, the total number of points for all the
+					//frames. Fills in 0 for the element in the array if the "if" 
+					//statements are not satisfied --> all the points that are
+					// on the half with the bud
+			
+ 			for(j=distRows; j<rows.length; j++){
+				column=split(rows[j], "\t");
+				dist=newArray(counter);
+				
+				if (column[0]==n) { 
+					xPt=parseFloat(column[2]);
+ 					yPt=parseFloat(column[3]);
+ 					distRows++;
+ 					
+ 					if (cellX<budX){
+ 						
+ 						if (xPt<=cellX){
+ 							top=yPt-m*xPt-b;
+ 							bottom=m*m+1;
+ 							distTmp[j]=(abs(top))/(sqrt(bottom));
+						} else {
+ 						badPts++;
+ 						}
+ 					}
+ 					
+ 					if (cellX>budX){
+ 						
+ 						if (xPt>=cellX){
+ 							top=yPt-m*xPt-b;
+ 							bottom=m*m+1;
+ 							distTmp[j]=(abs(top))/(sqrt(bottom));
+						} else {
+ 						badPts++;
+ 						}
+ 					}	
+ 				}	
+ 			}
+ 			
+ 			IJ.log("distTmp_Array=");
+ 			printArray(distTmp);
+ 			dist=Array.slice(distTmp, start, numRows);
+ 				// start tells you which element within distTmp is the position of the first point for the
+ 					// frame that is currently being worked on. numRows is the position of the element 
+ 					// at the end of the frame. 
+ 				// Half of the points will be non-zero (from the half opp the bud), while 
+ 					// the other half will be zero (the half from the same side of bud).
+ 			
+ 			//REARRANGE XCOORDTMP AND YCOORDTMP ARRAYS SO THAT THE START AND END ARE AT THE POINT CLOSEST TO THE LINE OPP THE BUD 
+ 			
+ 			IJ.log("dist=");
+ 			//Array.print(dist);
+ 			printArray(dist);
+			value=minNonZeroOfArray(dist);
+				// find the minimum value of an array that is greater than zero (what is 
+					// the value?)
+ 			indexMin=indexOfArray(dist);
+ 				// find the index position of the minimum non-zero value (where is the 
+ 					// value?)
+ 			end=indexMin-1;
+ 				// "end" is the index position immediately adjacent to the index position 
+ 					// of the minimum. Specifically, to the left (depending on the following code,
+ 					// this could have been either to the left or to the right)
+ 			//IJ.log("min of dist="+value);
+ 			//IJ.log("index of min="+indexMin);
+ 			// Next steps split the existing xcoordTmp array, which has all of the x points for 
+ 					// that frame, into two arrays which are then re-combined so that the 
+ 					// first element of the array is the minimum and the last element of the
+ 					// array is the element that was initial adjacent to the minimum (end)
+ 			xSplit1=Array.slice(xcoordTmp, indexMin, counter);
+ 				// array starts at the minimum and goes through the last element of the tmp array
+ 			xSplit2=Array.slice(xcoordTmp, 0, end);
+ 				// array starts at the first element and goes through to the element immediately
+ 					// adjacent to the minimum
+ 			xcoord=Array.concat(xSplit1, xSplit2);
+ 				// concatenate the arrays 
+ 			//printArray(xcoord);
+ 			// Following steps repeat the steps as above for the xcoordTmp array
+ 			ySplit1=Array.slice(ycoordTmp, indexMin, counter);
+ 			ySplit2=Array.slice(ycoordTmp, 0, end);
+ 			ycoord=Array.concat(ySplit1, ySplit2);
+ 			IJ.log("ycoordArray=");
+ 			printArray(ycoord);
+ 			
+ 			//waitForUser("check"); //Debugging
+ 			
+ 			//ADD THE REORGANIZED ARRAYS AS A POLYLINE SELECTION AND PROCESS THE PIXEL INTENSITY ACROSS THE LINE
+ 			
+ 			makeSelection("polyline", xcoord, ycoord);
+ 			roiManager("Add");	
+			title=getSliceNumber();
+			//IJ.log("title="+title);
+			run("Interpolate", "interval=1");
+			run("Straighten...", "line=6");
+			selectWindow("Duplicate-1");
+			w=getWidth;
+			//IJ.log(w);
+			if (w!=100) {
+				run("Size...", "width=100 height=6 average interpolation=Bilinear");
+				// Readjusts the length of the linear piece to be 100 pixels
+			} 
+			
+			selectWindow("Duplicate");
+			roiManager("select",n);
+			run("Line to Area");
+			List.setMeasurements;
+			majorAxis=List.getValue("Major");
+			// cellX = x coordinate center of the ROI
+			minorAxis=List.getValue("Minor");
+			// cellY = y coordinate center of the ROI
+			angle=List.getValue("Angle");
+			aspectRatio=List.getValue("AR");
+			//IJ.log("cellX="+cellX+"\n"+"cellY="+cellY);
+			//Use the x-coordinate array and the y-coordinate array to plot a polyline
+			// Convert to an Area ROI to find the center 
+			
+			setResult("Frame", n-1, n);
+			setResult("Major", n-1, majorAxis);
+			setResult("Minor", n-1, minorAxis);
+			setResult("Angle", n-1, angle);
+			setResult("AR", n-1, aspectRatio);
+			updateResults();
+	
+			//IJ.log("width_"+n+"="+w);
+			saveAs("Tiff", snakeGFPDir+title);
+			selectWindow(n+".tif");
+			close();
+			selectWindow("Duplicate");
+		}
+	}
+	
+	
+	
+	
+//FUNICTIONS
+
+//Returns the maximum of the array
+function maxOfArray(array) {
+    min=0;
+    for (a=0; a<lengthOf(array); a++) {
+        min=minOf(array[a], min);
+    }
+    max=min;
+    for (a=0; a<lengthOf(array); a++) {
+        max=maxOf(array[a], max);
+    }
+    return max;
+}
+
+//Returns the minimum of the array
+function minOfArray(array) {
+    max=0;
+    for (a=0; a<lengthOf(array); a++) {
+        max=maxOf(array[a], max);
+    }
+    min=max;
+    for (a=0; a<lengthOf(array); a++) {
+        min=minOf(array[a], min);
+    }
+    return min;
+}
+
+//Returns the minimum value of the array that is greater than 0
+function minNonZeroOfArray(array) {
+    max=0;
+    for (a=0; a<lengthOf(array); a++) {
+        max=maxOf(array[a], max);
+    }
+    min=max;
+    for (a=0; a<lengthOf(array); a++) {
+        if (array[a]>0) {
+        	min=minOf(array[a], min);
+        } else {
+        	min=minOf(1000, min);
+        }
+    }
+    return min;
+}
+
+//Returns the indices at which a value occurs within an array 
+function indexOfArray(array) { 
+    count=0; 	
+    for (i=0; i<lengthOf(array); i++) { 
+        if (array[i]==value) { 
+            count++; 
+        } 
+    } 
+    if (count>0) { 
+        //indices=newArray(count); 
+        count=0; 
+        for (i=0; i<lengthOf(array); i++) { 
+            if (array[i]==value) { 
+                indices=i; 
+                count++; 
+            } 
+        } 
+		return indices;  
+	}
+}
+
+//Prints the array in a human-readable form
+function printArray(array) {
+    string="";
+    for (i=0; i<lengthOf(array); i++) {
+        if (i==0) {
+            string=string+array[i];
+        } else {
+            string=string+", "+array[i];
+        }
+    }
+    print(string);
+}
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close(); 
+	}
+}

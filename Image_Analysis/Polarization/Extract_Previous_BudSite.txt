@@ -1,0 +1,77 @@
+'''
+Kristen Witte
+Glotzer Lab
+Extract_Previous_BudSite.txt
+
+This macro creates a binary image detailing the position of the previous bud site.
+
+Requirements/Inputs:
+Output from Cropper.txt
+
+Dependencies:
+None
+
+Outputs:
+A binary image in each cell folder that defines the previous site of bud emergence
+
+'''
+
+
+
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+IJ.log("dir: " + dir);
+
+num_cells = getFileList(dir);
+print("num_cells.length: " + num_cells.length);
+
+count = 0;
+for (i = 0; i < num_cells.length; i++){
+    curr_cell = num_cells[i];
+    print("curr_cell: " + curr_cell);
+    data = dir + curr_cell;
+
+    open(data + "Targets_crop.tif");
+    frames = nSlices();
+    run("Duplicate...", "title=Targets duplicate range=1-["+frames+"]");
+
+    selectWindow("Targets");
+    run("In [+]");
+    run("In [+]");
+    run("In [+]");
+
+    roiManager("Reset");
+  	makeOval(0,0,5,5);
+
+  	msg = "Place circle on site of previous bud";
+  	waitForUser(msg + "\n" + "When finished, press OK");
+  	roiManager("Add");
+  	List.setMeasurements;
+	//print(List.getList);
+	budX=List.getValue("X");
+	budY=List.getValue("Y");
+
+	selectWindow("Targets");
+  	getDimensions(width, height,channels, slices, frames);
+
+	newImage("Untitled", "8-bit Black", width, height, slices);
+	selectWindow("Untitled");
+	setSlice(1);
+	makeRectangle(budX,budY,1,1);
+	setColor("white");
+	fill();
+
+	selectWindow("Untitled");
+	title="Prev_BudSite";
+	saveAs("Tiff", data+title);
+
+	closeAllImages();
+}
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}

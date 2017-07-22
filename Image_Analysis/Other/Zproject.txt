@@ -1,0 +1,80 @@
+//FUNCTIONS
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+function zProjectAve(frame_start, frame_stop, type, increment){
+  for(i=frame_start; i<frame_stop; i++){
+    selectWindow("RFP");
+    stop = i+increment;
+    run("Z Project...", "start=i stop=stop projection=[Average Intensity]");
+    selectWindow("AVG_RFP");
+    rename("Avg_"+ type + "_" +i);
+    title = getTitle();
+    saveAs("Tiff", proc+title);
+  }
+}
+
+function iterateZProjectAve(frame_start, total_frames){
+  halfway = total_frames/2;
+  for(i=frame_start; i<halfway; i++){
+    increment = (halfway+1) - i
+    zProjectAve(frame_start, total_frames, increment, increment)
+  }
+}
+
+function defineTypes(frames, pre_count, count, post_count){
+  for(i=1; i<=frames; i++){
+    selectWindow("RFP");
+    setSlice(i);
+    label = getInfo("slice.label");
+    //end = lengthOf(curr_cell) - 1;
+    type = substring(label, 4, 7);
+    if(type == "Pre"){
+      pre_count++;
+    } else if(type == "Pos"){
+      post_count++;
+    } else{
+      count++;
+    }
+  }
+}
+
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+proc=dir+"processedImages"+File.separator;
+File.makeDirectory(proc);
+
+open(dir + "RFP_Stack.tif");
+frames=nSlices();
+run("Duplicate...", "title=RFP duplicate range=1-["+frames+"]");
+
+selectWindow("RFP");
+
+iterateZProjectAve(1, frames)
+
+pre_count = 0;
+count = 0;
+post_count = 0;
+
+defineTypes(frames, pre_count, count, post_count)
+
+high_int_frame_start = pre_count + 1;
+high_int_frame_stop = pre_count + count;
+
+post_frame_start = pre_count + count + 1;
+post_frame_stop = nSlices();
+
+zProjectAve(1, pre_count, "Pre", 1)
+zProjectAve(high_int_frame_start, high_int_frame_stop, "", 1)
+zProjectAve(post_frame_start, post_frame_stop, "Post", 1)
+
+run("Images to Stack", "name=Stack title=[] use");
+saveAs("Tiff", proc+"Ave_Stack");
+
+closeAllImages();

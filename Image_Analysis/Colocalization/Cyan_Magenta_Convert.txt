@@ -1,0 +1,77 @@
+'''
+Kristen Witte
+Glotzer Lab
+Cyan_Magenta_Convert.txt
+
+This macro loops through a folder of cells and
+converts a GFP image to cyan pseudo-colored, an RFP image to magenta pseudo-colored,
+and makes a merged image.
+
+Requirements/Inputs:
+An edited version of Cropper.txt that produces the following root directory for each Cell:
+	Root Directory:
+		>GFP.tif
+		>Nom.tif
+		>RFP.tif
+
+Dependencies:
+None
+
+Outputs:
+1) Cyan_GFP.tif
+2) Magenta_RGP.tif
+3) Merge.tif
+'''
+
+//FUNCTIONS
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+IJ.log("dir: " + dir);
+
+num_images = getFileList(dir);
+//print("num_cells.length: " + num_cells.length);
+
+count = 0;
+for (i = 0; i < num_images.length; i++){
+  curr_image = num_images[i];
+  //print("curr_cell: " + curr_cell);
+  all_files = getFileList(dir + curr_image);
+  curr_path = dir + curr_image;
+  proc = curr_path + "LowProcessImages" + File.separator;
+  File.makeDirectory(proc);
+  open(curr_path + all_files[0]);
+  run("Duplicate...", "title=GFP");
+  open(curr_path + all_files[1]);
+  run("Duplicate...", "title=Nom");
+  open(curr_path + all_files[2]);
+  run("Duplicate...", "title=RFP");
+
+  selectWindow("GFP");
+  setMinAndMax(2500, 45000);
+
+  selectWindow("RFP");
+  setMinAndMax(2500, 45000);
+
+  run("Merge Channels...", "c5=GFP c6=RFP create keep");
+  run("Stack to RGB");
+  selectWindow("Composite");
+  saveAs("Tiff", proc+"Merge.tif");
+
+  selectWindow("GFP");
+  run("Cyan");
+  saveAs("Tiff", proc+"Cyan_GFP.tif");
+
+  selectWindow("RFP");
+  run("Magenta");
+  saveAs("Tiff", proc+"Magenta_RFP.tif");
+  closeAllImages();
+}

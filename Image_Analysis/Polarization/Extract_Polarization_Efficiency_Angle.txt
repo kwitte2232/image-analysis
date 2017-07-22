@@ -1,0 +1,133 @@
+'''
+Kristen Witte
+Glotzer Lab
+Extract_Polarization_Efficiency_Angle.txt
+
+Uses the kymographic data derived from Membrane_HeatMap_Kymos.txt to determine the 
+angle between target and site of bud emergence of each individual cell in an entire folder 
+(processedImages/) of cells. 
+
+Requirements/Inputs:
+Output from Membrane_HeatMap_Kymos.txt
+
+Dependencies:
+None
+
+Outputs:
+A csv file entitled "polarization_efficiency_angle.csv" that catalogs the Pixel Difference, Degrees,
+and Radians for each cell. 
+'''
+
+
+
+//FUNCTIONS
+//Prints the array in a human-readable form
+function printArray(array) {
+    string="";
+    for (i=0; i<lengthOf(array); i++) {
+        if (i==0) {
+            string=string+array[i];
+        } else {
+            string=string+", "+array[i];
+        }
+    }
+    print(string);
+}
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+dir=getDirectory("Choose a directory");
+print(dir);
+
+proc_dir = dir + "processedImages/";
+num_cells = getFileList(proc_dir);
+count = 0;
+for (i = 0; i < num_cells.length; i++){
+  curr_cell = num_cells[i];
+  //print("curr_cell: " + curr_cell);
+  all_files = getFileList(proc_dir + curr_cell);
+	//printArray(all_files);
+  if (all_files.length > 5) {
+    if (startsWith(all_files[2], "MotherCell")){
+      count = analyze_data(proc_dir, curr_cell, all_files[2], count);
+	  }	else if (startsWith(all_files[3], "MotherCell") && startsWith(all_files[1], "DaughterCell")){
+      count = analyze_data(proc_dir, curr_cell, all_files[3], count);
+      count = analyze_data(proc_dir, curr_cell, all_files[1], count);
+    } else (startsWith(all_files[1], "DaughterCell")){
+      count = analyze_data(proc_dir, curr_cell, all_files[1], count);
+    }
+  }
+}
+//selectWindow("Results");
+saveAs("measurements", proc_dir + "polarization_efficiency_angle.csv");
+if(isOpen("Results")){
+	selectWindow("Results");
+	run("Close");
+}
+
+selectWindow("Log");
+saveAs("text", proc_dir + "Log.txt");
+
+function analyze_data(proc_dir, curr_cell, curr_file, count){
+  roiManager("Reset");
+  data = proc_dir + curr_cell + curr_file;
+  data_list = getFileList(data);
+  if (data_list.length > 2){
+    end = lengthOf(curr_cell) - 1;
+    new_string = substring(curr_cell, 5, end);
+    number = parseFloat(new_string);
+    setResult("Cell", count, number);
+
+    open(data + "Bud_Montage.tif");
+    open(data + "GFP_Montage.tif");
+
+    selectWindow("Bud_Montage.tif");
+    run("Duplicate...", "title=Bud duplicate");
+    selectWindow("GFP_Montage.tif");
+    run("Duplicate...", "title=Targets duplicate");
+
+    selectWindow("Bud");
+    run("Threshold...");
+    run("Create Selection");
+    List.setMeasurements;
+    budX=List.getValue("X");
+    budY=List.getValue("Y");
+    setResult("BudX", count, budX);
+    setResult("BudY", count, budY);
+
+    selectWindow("Targets");
+    makeRectangle(0,0,100,30);
+    run("Duplicate...", "title=Target_Crop duplicate");
+    selectWindow("Target_Crop");
+    List.setMeasurements;
+    mean = List.getValue("Mean");
+    if (mean > 0){
+      run("Threshold...");
+      run("Create Selection");
+      List.setMeasurements;
+      targetX=List.getValue("X");
+      setResult("TargetX", count, targetX);
+
+      pi = PI;
+      pixel_diff = abs(targetX - budX);
+      degrees_diff = pixel_diff*3.6;
+      radians_diff = degrees_diff*(pi/180);
+      setResult("Pixel Diff", count, pixel_diff);
+      setResult("Degrees", count, degrees_diff);
+      setResult("Radians", count, radians_diff);
+    } else {
+      IJ.log("curr_cell: " + curr_cell);
+      IJ.log("No Targets found");
+    }
+    updateResults();
+    closeAllImages();
+    count++;
+  }
+  return count
+}

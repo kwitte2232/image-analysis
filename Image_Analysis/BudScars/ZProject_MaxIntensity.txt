@@ -1,0 +1,62 @@
+'''
+Kristen Witte
+Glotzer Lab
+ZProject_MaxIntensity.txt
+
+One of the first macros that I ever wrote, and was developed for Bud Scars. Functions to 
+make a z-projection of the max intensity by concentrating on the first 20 slices of 25-slice
+stack. 
+
+Requirements/Inputs:
+A folder of cells derived from a Cropper.txt derivative.   
+
+Dependencies:
+StackReg
+
+Outputs:
+Max-projections of each cell
+'''
+
+waitForUser("Choose a directory to save your projected GFP images");
+
+tmp = getDirectory("Choose a directory");
+list=getFileList(tmp);
+
+myDir = tmp+"ZMax"+File.separator;
+File.makeDirectory(myDir);
+	if (!File.exists(myDir)) {
+      exit("Unable to create directory");
+	}
+
+//print("");
+//print(myDir);
+
+//waitForUser("Choose a directory containing the image stacks to be processed.\n \nThe directory should contain only image stacks to be processed.");
+
+//dir=getDirectory("Choose a directory");
+//print(dir);
+
+//Array.print(list);
+
+number=0;
+
+//setBatchMode(true);
+ 
+for (i=0; i<list.length; i++){	
+	number++;
+	curImage = myDir+"MaxInt_Image_"+number+File.separator;
+	File.makeDirectory(curImage);
+	//IJ.log(number);
+	nextStack=list[i];
+	open(tmp+nextStack);
+	run("Duplicate...");
+	run("StackReg ", "transformation=Translation");
+	run("Z Project...", "start=1 stop=20 projection=[Max Intensity]");
+	//title=getTitle();
+	saveAs("Tiff", curImage+"MaxInt_"+number+".tif");
+	close();
+	selectWindow(nextStack);
+	close();
+}
+
+//setBatchMode(false);

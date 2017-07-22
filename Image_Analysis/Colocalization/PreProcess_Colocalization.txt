@@ -1,0 +1,106 @@
+'''
+Kristen Witte
+Glotzer Lab
+PreProcess_Colocalization.txt
+
+PreProcesses a folder of images often generated from a colocalization experiment that uses
+Z-projection. Likely, there are ~20 folders that will use this pre-process, therefore doing 
+some additional loopingthrough the folder so that you only have to run this once would be 
+beneficial.  
+
+Requirements/Inputs:
+An edited version of Cropper.txt that produces the following root directory for each Cell:
+	Root Directory:
+		>GFP.tif
+		>Nom.tif
+		>RFP.tif
+
+Dependencies:
+BleachCorrection.txt
+
+Outputs:
+1) mCherry_Transform.tif
+2) GFP_Transform.tif
+3) Nom_Transform.tif
+'''
+
+dir=getDirectory("Choose a directory");
+print(dir);
+
+files = getFileList(dir)
+
+open(dir + files[0])
+run("Duplicate...", "title=Duplicate_mCherry duplicate");
+
+open(dir + files[1])
+run("Duplicate...", "title=Duplicate_GFP duplicate");
+
+open(dir + files[2])
+run("Duplicate...", "title=Duplicate_Nom duplicate");
+run("Reverse");
+
+proc=dir+"LowProcessImages"+File.separator;
+File.makeDirectory(proc);
+
+selectWindow("Duplicate_mCherry");
+run("Reverse");
+frames=nSlices();
+runMacro("BleachCorrection.txt");
+title="mCherry_BleachCorrection";
+saveAs("Tiff", proc+title);
+
+selectWindow("Duplicate_GFP");
+run("Reverse");
+runMacro("BleachCorrection.txt");
+title="GFP_BleachCorrection";
+saveAs("Tiff", proc+title);
+
+selectWindow("mCherry_BleachCorrection.tif");
+run("Duplicate...", "title=mCherry duplicate range=1-["+frames+"]");
+run("8-bit");
+
+selectWindow("GFP_BleachCorrection.tif");
+run("Duplicate...", "title=GFP duplicate range=1-["+frames+"]");
+run("8-bit");
+
+run("Merge Channels...", "c1=mCherry c2=GFP create keep");
+waitForUser("Adjust Brightness/Contrast");
+
+run("Stack to RGB", "slices");
+
+selectWindow("Composite");
+run("8-bit");
+
+run("MultiStackReg", "stack_1=Composite action_1=Align file_1=[] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");
+	//Save the transformation matrix into "LowProcessImages" folder
+
+title="MultiStack_Merge";
+saveAs("Tiff", proc+title);
+
+trans=proc+"TransformationMatrices.txt";
+
+selectWindow("mCherry_BleachCorrection.tif");
+//run("Duplicate...", "title=mCherry_Transform duplicate range=1-["+frames+"]");
+run("MultiStackReg", "stack_1=mCherry_BleachCorrection.tif action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"mCherry_Transform");
+
+selectWindow("GFP_BleachCorrection.tif");
+//run("Duplicate...", "title=GFP_Transform duplicate range=1-["+frames+"]");
+run("MultiStackReg", "stack_1=GFP_BleachCorrection.tif action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"GFP_Transform");
+
+selectWindow("Duplicate_Nom");
+run("MultiStackReg", "stack_1=Duplicate_Nom action_1=[Load Transformation File] file_1=["+trans+"] stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+saveAs("Tiff", proc+"Nom_Transform");
+
+closeAllImages();
+
+//FUNCTIONS
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}

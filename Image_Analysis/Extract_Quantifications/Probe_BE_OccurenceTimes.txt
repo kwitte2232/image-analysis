@@ -1,0 +1,92 @@
+'''
+Probe_BE_OccurenceTimes.txt
+Kristen Witte
+Glotzer Lab
+
+This macro loops through a directory of cropped cells (generated from Cropper.txt),
+asking the user to identify the first appearance of mCherry signal and the time
+of bud emergence. As the mCherry signal tends to be very dim,
+user-supplied information is needed.
+
+Requirements:
+Output from Cropper.txt
+
+Dependencies:
+None
+
+Output:
+csv file detailing the time of probe appearance and time of bud emergence for
+each cell in the directory.
+'''
+
+
+//FUNCTIONS
+
+//Closes all images
+function closeAllImages()	{
+ 	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
+
+
+roiManager("reset");
+
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+IJ.log("dir: " + dir);
+
+num_cells = getFileList(dir);
+print("num_cells.length: " + num_cells.length);
+printArray(num_cells);
+
+count = 0;
+for (i = 0; i < num_cells.length; i++){
+    curr_cell = num_cells[i];
+    print("curr_cell: " + curr_cell);
+    data = dir + curr_cell;
+		num_files = getFileList(data);
+		if (num_files.length >
+
+		//list=getFileList(cellDir);
+		open(data+"Centers_crop.tif");
+		open(data+"mChStack_crop.tif");
+		open(data+"Targets_crop.tif");
+
+		selectWindow("Centers_crop.tif");
+		frames=nSlices;
+		run("Duplicate...", "title=Duplicate_GFP duplicate range=1-["+frames+"]");
+
+		selectWindow("mChStack_crop.tif");
+		run("Duplicate...", "title=Duplicate_dsRED duplicate range=1-["+frames+"]");
+
+		selectWindow("Targets_crop.tif");
+		makeOval(0,0,10,10);
+		run("In [+]");
+		run("In [+]");
+		run("In [+]");
+
+		msg="Choose the x,y coordinate of the bud site by drawing a circle around the emerging bud in the first frame visible.";
+		waitForUser(msg + "\n" + "When finished, press OK");
+		selectWindow("Targets_crop.tif");
+		budEmerge=getSliceNumber();
+
+		msg="Choose frame where mCherry signal is first visible.";
+		waitForUser(msg + "\n" + "When finished, press OK");
+		mcherry_signal = getSliceNumber();
+
+		setResult("Cell")
+		setResult("mCherry App", 0, mcherry_signal)
+		setResult("Bud Emergence", 0, budEmerge);
+
+    updateResults();
+    closeAllImages();
+}
+
+selectWindow("Results");
+saveAs("measurements", dir + "Probe_BE_Times.csv");
+if(isOpen("Results")){
+  selectWindow("Results");
+  run("Close");
+}

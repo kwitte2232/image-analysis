@@ -1,0 +1,109 @@
+'''
+Kristen Witte
+Glotzer Lab
+Build_Previous_BudSite_Kymograph.txt
+
+*NOTE*
+This macro is not necessary anymore (see below); rather, it can be used as a template for 
+some similar process if necessary.
+
+This macro builds a kymograph of the previous bud site. The most updated version of 
+Membrane_HeatMap_Kymo.txt already does what this macro does, however. 
+
+Requirements/Inputs:
+Output from Cropper.txt
+Output from Membrane_HeatMap_Kymo.txt (The most updated version of this though already 
+does what this macro does)
+
+Dependencies:
+None
+
+Outputs:
+1) Prev_Bud_Montage.tif
+2) Prev_Straight_Snakes/
+'''
+
+
+waitForUser("Choose the current directory");
+dir=getDirectory("Choose a Directory");
+IJ.log("dir: " + dir);
+
+num_cells = getFileList(dir);
+print("num_cells.length: " + num_cells.length);
+
+
+count = 0;
+for (i = 0; i < num_cells.length; i++){
+	curr_cell = num_cells[i];
+	print("curr_cell: " + curr_cell);
+	data = dir + curr_cell;
+	print(data);
+	mother = data + "MotherCell/";
+	rois = mother + "ROIs.zip";
+	print(rois);
+
+	prev=mother+"Previous_BudSite/";
+	File.makeDirectory(prev);
+
+	open(data + "Prev_BudSite.tif");
+	run("Select None");
+	frames = nSlices();
+	run("Duplicate...", "title=duplicate duplicate range=1-["+frames+"]");
+	roiManager('Reset');
+	roiManager("open", rois);
+	number = roiManager('count');
+	diff = frames - number;
+	print(diff);
+	if (diff == -2){
+		roiManager('select', 0);
+		roiManager('delete');
+		roiManager('select', 0);
+		roiManager('delete');
+	} else if (diff == -1){
+		roiManager('select', 0);
+		roiManager('delete');
+	}
+
+	setBatchMode(true);
+
+	for (j=0; j<frames; j++) {
+		setSlice(j+1);
+
+		roiManager("select",j);
+
+		title=getSliceNumber();
+		run("Interpolate", "interval=1");
+		run("Straighten...", "line=6");
+		selectWindow("duplicate-1");
+		w=getWidth;
+
+		if (w!=100) {
+			run("Size...", "width=100 height=6 average interpolation=Bilinear");
+		}
+
+		title = j + 1;
+		saveAs("Tiff", prev+title);
+		selectWindow(title+".tif");
+		close();
+		selectWindow("duplicate");
+		print(i);
+	}
+	setBatchMode(false);
+	roiManager('Reset');
+	closeAllImages();
+	run("Image Sequence...", "open=prev number=181 starting=1 increment=1 scale=100 file=[] or=[] sort");
+	run("Make Montage...", "columns=1 rows=181 scale=1 first=1 last=181 increment=1 border=0 font=12");
+	saveAs("Tiff", mother+"Prev_Bud");
+	closeAllImages();
+	print(i);
+}
+
+
+
+//FUNCTIONS
+function closeAllImages()	{
+	while (nImages>0) {
+		selectImage(nImages);
+		close();
+	}
+}
