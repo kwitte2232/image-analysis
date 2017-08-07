@@ -1,8 +1,0 @@
-//__author__ = 'Kristen Witte (kwitte@uchicago.edu)'
-//__version__ = '0.0.1'
-
-// Generate figure for dynamic reorientation experiments
-
-//setBatchMode(true);
-waitForUser("Choose the current directory");
-dir=getDirectory("Choose a Directory");
